@@ -1,9 +1,9 @@
 declare global {
-    type KonvaLayout = import('./viewer/viewerLayout.js').KonvaLayout;
-    type KonvaDataTable = import('./viewer/viewerLayout.js').KonvaDataTable;
-    type KonvaDataColumn = import('./viewer/viewerLayout.js').KonvaDataColumn;
-    type KonvaIText = import('./viewer/viewerCanvas.js').KonvaIText;
-    type KonvaOcrWord = import('./viewer/viewerCanvas.js').KonvaOcrWord;
+    type KonvaLayout = import('./js/viewerLayout.js').KonvaLayout;
+    type KonvaDataTable = import('./js/viewerLayout.js').KonvaDataTable;
+    type KonvaDataColumn = import('./js/viewerLayout.js').KonvaDataColumn;
+    type KonvaIText = import('./viewer.js').KonvaIText;
+    type KonvaOcrWord = import('./viewer.js').KonvaOcrWord;
 }
 
 export { };

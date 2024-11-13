@@ -3,8 +3,8 @@ import Konva from './konva/index.js';
 import scribe from '../scribe.js/scribe.js';
 // eslint-disable-next-line import/no-cycle
 import {
-  ScribeCanvas,
-} from './viewerCanvas.js';
+  ScribeViewer,
+} from '../viewer.js';
 import { KonvaIText } from './viewerWordObjects.js';
 
 const colColorsHex = ['#287bb5', '#19aa9a', '#099b57'];
@@ -87,7 +87,7 @@ export class KonvaLayout extends Konva.Rect {
       if (this.label) this.label.destroy();
       this.label = undefined;
       // Deselect the box if it is selected.
-      ScribeCanvas.CanvasSelection.deselectDataColumnsByIds([this.layoutBox.id]);
+      ScribeViewer.CanvasSelection.deselectDataColumnsByIds([this.layoutBox.id]);
 
       this.destroyRect();
       return this;
@@ -126,7 +126,7 @@ export class KonvaLayout extends Konva.Rect {
     });
 
     this.addEventListener('dragmove', () => {
-      if (ScribeCanvas.KonvaIText.input && ScribeCanvas.KonvaIText.input.parentElement && ScribeCanvas.KonvaIText.inputRemove) ScribeCanvas.KonvaIText.inputRemove();
+      if (ScribeViewer.KonvaIText.input && ScribeViewer.KonvaIText.input.parentElement && ScribeViewer.KonvaIText.inputRemove) ScribeViewer.KonvaIText.inputRemove();
       if (this.label) {
         this.label.x(this.x() + this.width() * 0.5);
         this.label.yActual = this.y() + this.height() * 0.5;
@@ -202,9 +202,9 @@ class KonvaRegionControlHorizontal extends Konva.Line {
     this.boundBottom = 10000;
 
     this.on('dragstart', () => {
-      ScribeCanvas.drag.isResizingColumns = true;
+      ScribeViewer.drag.isResizingColumns = true;
 
-      const group = ScribeCanvas.getOverlayGroup(n);
+      const group = ScribeViewer.getOverlayGroup(n);
 
       if (top) {
         this.boundTop = group.getAbsoluteTransform().m[5];
@@ -241,7 +241,7 @@ class KonvaRegionControlHorizontal extends Konva.Line {
       }
     });
     this.addEventListener('dragend', () => {
-      ScribeCanvas.drag.isResizingColumns = false;
+      ScribeViewer.drag.isResizingColumns = false;
     });
 
     this.on('mouseover', () => {
@@ -292,9 +292,9 @@ class KonvaRegionControlVertical extends Konva.Line {
     this.boundRight = 10000;
 
     this.on('dragstart', () => {
-      ScribeCanvas.drag.isResizingColumns = true;
+      ScribeViewer.drag.isResizingColumns = true;
 
-      const group = ScribeCanvas.getOverlayGroup(n);
+      const group = ScribeViewer.getOverlayGroup(n);
 
       if (left) {
         this.boundLeft = group.getAbsoluteTransform().m[4];
@@ -329,7 +329,7 @@ class KonvaRegionControlVertical extends Konva.Line {
       }
     });
     this.addEventListener('dragend', () => {
-      ScribeCanvas.drag.isResizingColumns = false;
+      ScribeViewer.drag.isResizingColumns = false;
     });
 
     this.on('mouseover', () => {
@@ -380,9 +380,9 @@ export class KonvaDataTableControl extends Konva.Line {
     this.boundBottom = 10000;
 
     this.on('dragstart', () => {
-      ScribeCanvas.drag.isResizingColumns = true;
+      ScribeViewer.drag.isResizingColumns = true;
 
-      const group = ScribeCanvas.getOverlayGroup(n);
+      const group = ScribeViewer.getOverlayGroup(n);
 
       if (top) {
         this.boundTop = group.getAbsoluteTransform().m[5];
@@ -416,7 +416,7 @@ export class KonvaDataTableControl extends Konva.Line {
       }
     });
     this.addEventListener('dragend', () => {
-      ScribeCanvas.drag.isResizingColumns = false;
+      ScribeViewer.drag.isResizingColumns = false;
       renderLayoutDataTable(this.konvaTable.layoutDataTable);
     });
 
@@ -485,15 +485,15 @@ export class KonvaDataColSep extends Konva.Line {
     this.columnRight = columnRight;
 
     this.on('dragstart', () => {
-      ScribeCanvas.drag.isResizingColumns = true;
+      ScribeViewer.drag.isResizingColumns = true;
 
-      const group = ScribeCanvas.getOverlayGroup(n);
+      const group = ScribeViewer.getOverlayGroup(n);
 
       const boundLeftNeighbor = this.prev()?.absolutePosition()?.x;
       const boundRightNeighbor = this.next()?.absolutePosition()?.x;
 
       const boundLeftRaw = boundLeftNeighbor ?? group.getAbsoluteTransform().m[4];
-      const boundRightRaw = boundRightNeighbor ?? group.getAbsoluteTransform().m[4] + scribe.data.pageMetrics[n].dims.width * ScribeCanvas.layerOverlay.getAbsoluteScale().x;
+      const boundRightRaw = boundRightNeighbor ?? group.getAbsoluteTransform().m[4] + scribe.data.pageMetrics[n].dims.width * ScribeViewer.layerOverlay.getAbsoluteScale().x;
 
       // Add minimum width between columns to prevent lines from overlapping.
       const minColWidthAbs = Math.min((boundRightRaw - boundLeftRaw) / 3, 10);
@@ -522,7 +522,7 @@ export class KonvaDataColSep extends Konva.Line {
       }
     });
     this.addEventListener('dragend', () => {
-      ScribeCanvas.drag.isResizingColumns = false;
+      ScribeViewer.drag.isResizingColumns = false;
 
       if (!this.columnLeft || !this.columnRight) {
         renderLayoutDataTable(this.konvaTable.layoutDataTable);
@@ -555,7 +555,7 @@ export function renderLayoutDataTables(n) {
     renderLayoutDataTable(table);
   });
 
-  ScribeCanvas.layerOverlay.batchDraw();
+  ScribeViewer.layerOverlay.batchDraw();
 }
 
 export class KonvaDataTable {
@@ -600,7 +600,7 @@ export class KonvaDataTable {
 
       // Restore colors of words that were colored by this table.
       const wordIdArr = this.tableContent?.rowWordArr.flat().flat().map((x) => x.id) || [];
-      const canvasDeselectWords = ScribeCanvas.getKonvaWords().filter((x) => wordIdArr.includes(x.word.id));
+      const canvasDeselectWords = ScribeViewer.getKonvaWords().filter((x) => wordIdArr.includes(x.word.id));
       canvasDeselectWords.forEach((x) => {
         const { fill, opacity } = scribe.utils.ocr.getWordFillOpacity(x.word, scribe.opt.displayMode,
           scribe.opt.confThreshMed, scribe.opt.confThreshHigh, scribe.opt.overlayOpacity);
@@ -623,7 +623,7 @@ export class KonvaDataTable {
       scribe.data.layoutDataTables.pages[this.layoutDataTable.page.n].default = false;
     };
 
-    const group = ScribeCanvas.getOverlayGroup(layoutDataTable.page.n);
+    const group = ScribeViewer.getOverlayGroup(layoutDataTable.page.n);
 
     /** @type {Array<KonvaDataColSep>} */
     this.colLines = [];
@@ -664,7 +664,7 @@ export class KonvaDataTable {
       });
     }
 
-    ScribeCanvas.layerOverlay.batchDraw();
+    ScribeViewer.layerOverlay.batchDraw();
   }
 
   /**
@@ -674,7 +674,7 @@ export class KonvaDataTable {
   static colorTableWords(konvaDataTable) {
     if (!konvaDataTable.tableContent) return;
 
-    const group = ScribeCanvas.getOverlayGroup(konvaDataTable.layoutDataTable.page.n);
+    const group = ScribeViewer.getOverlayGroup(konvaDataTable.layoutDataTable.page.n);
 
     konvaDataTable.rowSpans.forEach((rowSpan) => rowSpan.destroy());
 
@@ -711,7 +711,7 @@ export class KonvaDataTable {
       }
     }
 
-    const canvasWords = ScribeCanvas.getKonvaWords();
+    const canvasWords = ScribeViewer.getKonvaWords();
     for (let i = 0; i < colWordIdArr.length; i++) {
       const colWordIndex = colWordIdArr[i];
       const colorBase = colColorsHex[i % colColorsHex.length];
@@ -735,7 +735,7 @@ export function renderLayoutDataTable(layoutDataTable) {
     return;
   }
 
-  const konvaLayoutExisting = ScribeCanvas.getKonvaDataTables().find((x) => x.layoutDataTable.id === layoutDataTable.id);
+  const konvaLayoutExisting = ScribeViewer.getKonvaDataTables().find((x) => x.layoutDataTable.id === layoutDataTable.id);
 
   const wordIdOldArr = konvaLayoutExisting?.tableContent?.rowWordArr.flat().flat().map((x) => x.id);
 
@@ -747,7 +747,7 @@ export function renderLayoutDataTable(layoutDataTable) {
   if (wordIdOldArr) {
     const wordIdNewArr = konvaLayout.tableContent?.rowWordArr.flat().flat().map((x) => x.id) || [];
     const wordIdDeselectArr = wordIdOldArr.filter((x) => !wordIdNewArr.includes(x));
-    const canvasDeselectWords = ScribeCanvas.getKonvaWords().filter((x) => wordIdDeselectArr.includes(x.word.id));
+    const canvasDeselectWords = ScribeViewer.getKonvaWords().filter((x) => wordIdDeselectArr.includes(x.word.id));
     canvasDeselectWords.forEach((x) => {
       // const { fill, opacity } = getWordFillOpacityGUI(x.word);
       const { fill, opacity } = scribe.utils.ocr.getWordFillOpacity(x.word, scribe.opt.displayMode,
@@ -759,7 +759,7 @@ export function renderLayoutDataTable(layoutDataTable) {
   }
 
   konvaLayout.columns.forEach((column) => {
-    const group = ScribeCanvas.getOverlayGroup(column.konvaTable.layoutDataTable.page.n);
+    const group = ScribeViewer.getOverlayGroup(column.konvaTable.layoutDataTable.page.n);
     group.add(column);
   });
   konvaLayout.colLines.forEach((colLine) => colLine.moveToTop());
@@ -783,7 +783,7 @@ export class KonvaRegion extends KonvaLayout {
     this.leftControl = new KonvaRegionControlVertical(this, true);
     this.rightControl = new KonvaRegionControlVertical(this, false);
 
-    const group = ScribeCanvas.getOverlayGroup(layoutBox.page.n);
+    const group = ScribeViewer.getOverlayGroup(layoutBox.page.n);
 
     group.add(this.topControl);
     group.add(this.bottomControl);
@@ -1035,7 +1035,7 @@ const cleanLayoutDataColumns = (table) => {
  * @param {number} n
  */
 export function renderLayoutBoxes(n) {
-  const group = ScribeCanvas.getOverlayGroup(n);
+  const group = ScribeViewer.getOverlayGroup(n);
   group.destroyChildren();
 
   const angle = scribe.data.pageMetrics[n].angle || 0;
@@ -1043,7 +1043,7 @@ export function renderLayoutBoxes(n) {
 
   group.rotation(textRotation);
 
-  if (!ScribeCanvas.overlayGroupsRenderIndices.includes(n)) ScribeCanvas.overlayGroupsRenderIndices.push(n);
+  if (!ScribeViewer.overlayGroupsRenderIndices.includes(n)) ScribeViewer.overlayGroupsRenderIndices.push(n);
 
   Object.values(scribe.data.layoutRegions.pages[n].boxes).forEach((box) => {
     const konvaLayout = new KonvaRegion(box);
@@ -1056,13 +1056,13 @@ export function renderLayoutBoxes(n) {
   });
   renderLayoutDataTables(n);
 
-  ScribeCanvas.layerOverlay.batchDraw();
+  ScribeViewer.layerOverlay.batchDraw();
 }
 
 export function setLayoutBoxInclusionLevelClick(level) {
   // Save the selected boxes to reselect them after re-rendering.
-  const selectedRegions = ScribeCanvas.CanvasSelection.getKonvaRegions();
-  const selectedDataColumns = ScribeCanvas.CanvasSelection.getKonvaDataColumns();
+  const selectedRegions = ScribeViewer.CanvasSelection.getKonvaRegions();
+  const selectedDataColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
 
   const changedPages = {};
 
@@ -1081,14 +1081,14 @@ export function setLayoutBoxInclusionLevelClick(level) {
 
   Object.keys(changedPages).forEach((n) => {
     renderLayoutBoxes(Number(n));
-    ScribeCanvas.CanvasSelection.selectLayoutBoxesById(selectedArr);
+    ScribeViewer.CanvasSelection.selectLayoutBoxesById(selectedArr);
   });
 }
 
 export function setLayoutBoxInclusionRuleClick(rule) {
   // Save the selected boxes to reselect them after re-rendering.
-  const selectedRegions = ScribeCanvas.CanvasSelection.getKonvaRegions();
-  const selectedDataColumns = ScribeCanvas.CanvasSelection.getKonvaDataColumns();
+  const selectedRegions = ScribeViewer.CanvasSelection.getKonvaRegions();
+  const selectedDataColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
 
   const changedPages = {};
 
@@ -1106,7 +1106,7 @@ export function setLayoutBoxInclusionRuleClick(rule) {
 
   Object.keys(changedPages).forEach((n) => {
     renderLayoutBoxes(Number(n));
-    ScribeCanvas.CanvasSelection.selectLayoutBoxesById(selectedArr);
+    ScribeViewer.CanvasSelection.selectLayoutBoxesById(selectedArr);
   });
 }
 

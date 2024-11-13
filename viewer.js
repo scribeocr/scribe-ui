@@ -1,24 +1,24 @@
 /* eslint-disable import/no-cycle */
-import scribe from '../scribe.js/scribe.js';
-import Konva from './konva/index.js';
-import { search } from './viewerSearch.js';
+import scribe from './scribe.js/scribe.js';
+import Konva from './js/konva/index.js';
+import { search } from './js/viewerSearch.js';
 import {
   KonvaDataColumn, KonvaLayout, KonvaRegion, layout,
-} from './viewerLayout.js';
-import { replaceObjectProperties } from '../app/utils/utils.js';
-import { KonvaIText, KonvaOcrWord } from './viewerWordObjects.js';
-import { ViewerImageCache } from './viewerImageCache.js';
-import { handleKeyboardEvent } from './viewerShortcuts.js';
-import { contextMenuFunc, mouseupFunc2 } from './viewerCanvasInteraction.js';
+} from './js/viewerLayout.js';
+import { replaceObjectProperties } from './scribe.js/js/utils/miscUtils.js';
+import { KonvaIText, KonvaOcrWord } from './js/viewerWordObjects.js';
+import { ViewerImageCache } from './js/viewerImageCache.js';
+import { handleKeyboardEvent } from './js/viewerShortcuts.js';
+import { contextMenuFunc, mouseupFunc2 } from './js/viewerCanvasInteraction.js';
 import {
   deleteSelectedWord, modifySelectedWordBbox, modifySelectedWordFontFamily, modifySelectedWordFontSize, modifySelectedWordSmallCaps, modifySelectedWordStyle,
   modifySelectedWordSuper,
-} from './viewerModifySelectedWords.js';
+} from './js/viewerModifySelectedWords.js';
 
 Konva.autoDrawEnabled = false;
 Konva.dragButtons = [0];
 
-export class stateViewer {
+class stateViewer {
   static recognizeAllPromise = Promise.resolve();
 
   static layoutMode = false;
@@ -37,7 +37,7 @@ export class stateViewer {
  * This object contains the values of options for the GUI that do not directly map to options in the `scribe` module.
  * This includes both GUI-specific options and options that are implemented through arguments rather than the `opts` object.
  */
-export class optViewer {
+class optViewer {
   static enableRecognition = true;
 
   static enableXlsxExport = false;
@@ -86,7 +86,7 @@ class CanvasSelection {
   /** @type {?KonvaOcrWord} */
   static selectedWordFirst = null;
 
-  /** @type {Array<import('./viewerLayout.js').KonvaRegion>} */
+  /** @type {Array<import('./js/viewerLayout.js').KonvaRegion>} */
   static _selectedRegionArr = [];
 
   /** @type {Array<KonvaDataColumn>} */
@@ -129,8 +129,8 @@ class CanvasSelection {
   /**
    * Add layout boxes, including both regions and data columns, to the current selection.
    * Ignores boxes that are already selected.
-   * @param {Array<import('./viewerLayout.js').KonvaRegion|import('./viewerLayout.js').KonvaDataColumn>|
-   * import('./viewerLayout.js').KonvaRegion|import('./viewerLayout.js').KonvaDataColumn} konvaLayoutBoxes
+   * @param {Array<import('./js/viewerLayout.js').KonvaRegion|import('./js/viewerLayout.js').KonvaDataColumn>|
+   * import('./js/viewerLayout.js').KonvaRegion|import('./js/viewerLayout.js').KonvaDataColumn} konvaLayoutBoxes
    */
   static addKonvaLayoutBoxes = (konvaLayoutBoxes) => {
     let konvaLayoutBoxesArr;
@@ -159,10 +159,10 @@ class CanvasSelection {
  */
   static selectLayoutBoxesById = (layoutBoxIdArr) => {
     // eslint-disable-next-line no-use-before-define
-    const konvaLayoutBoxes = ScribeCanvas.getKonvaRegions().filter((x) => layoutBoxIdArr.includes(x.layoutBox.id));
+    const konvaLayoutBoxes = ScribeViewer.getKonvaRegions().filter((x) => layoutBoxIdArr.includes(x.layoutBox.id));
 
     // eslint-disable-next-line no-use-before-define
-    const konvaDataColumns = ScribeCanvas.getKonvaDataColumns().filter((x) => layoutBoxIdArr.includes(x.layoutBox.id));
+    const konvaDataColumns = ScribeViewer.getKonvaDataColumns().filter((x) => layoutBoxIdArr.includes(x.layoutBox.id));
 
     CanvasSelection.selectLayoutBoxes([...konvaLayoutBoxes, ...konvaDataColumns]);
   };
@@ -173,12 +173,12 @@ class CanvasSelection {
    */
   static selectLayoutBoxes = (konvaLayoutBoxes) => {
     // eslint-disable-next-line no-use-before-define
-    const selectedLayoutBoxes = ScribeCanvas.CanvasSelection.getKonvaRegions();
+    const selectedLayoutBoxes = ScribeViewer.CanvasSelection.getKonvaRegions();
     // eslint-disable-next-line no-use-before-define
-    const selectedDataColumns = ScribeCanvas.CanvasSelection.getKonvaDataColumns();
+    const selectedDataColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
 
     // eslint-disable-next-line no-use-before-define
-    ScribeCanvas.CanvasSelection.addKonvaLayoutBoxes(konvaLayoutBoxes);
+    ScribeViewer.CanvasSelection.addKonvaLayoutBoxes(konvaLayoutBoxes);
 
     selectedDataColumns.forEach((shape) => (shape.select()));
     selectedLayoutBoxes.forEach((shape) => (shape.select()));
@@ -282,16 +282,16 @@ function getDistance(p1, p2) {
 let mouseDownTarget;
 
 /**
- * @typedef {import('./konva/Node.js').KonvaEventObject<MouseEvent>} KonvaMouseEvent
- * @typedef {import('./konva/Node.js').KonvaEventObject<TouchEvent>} KonvaTouchEvent
- * @typedef {import('./konva/Node.js').KonvaEventObject<WheelEvent>} KonvaWheelEvent
+ * @typedef {import('./js/konva/Node.js').KonvaEventObject<MouseEvent>} KonvaMouseEvent
+ * @typedef {import('./js/konva/Node.js').KonvaEventObject<TouchEvent>} KonvaTouchEvent
+ * @typedef {import('./js/konva/Node.js').KonvaEventObject<WheelEvent>} KonvaWheelEvent
  */
 
 /**
  * Class for managing the selection of words, layout boxes, and data columns on the canvas.
  * Only one canvas should be used at a time, as most properties are static.
  */
-export class ScribeCanvas {
+export class ScribeViewer {
   /** @type {HTMLElement} */
   static elem;
 
@@ -317,13 +317,13 @@ export class ScribeCanvas {
     // This is an issue when a PDF is being uploaded alongside existing OCR data, as the correct dimensions are not known until the OCR data is parsed.
     if (start && n === 0) return 30;
 
-    if (start && ScribeCanvas.#pageStopsStart[n]) return ScribeCanvas.#pageStopsStart[n];
-    if (!start && ScribeCanvas.#pageStopsEnd[n]) return ScribeCanvas.#pageStopsEnd[n];
+    if (start && ScribeViewer.#pageStopsStart[n]) return ScribeViewer.#pageStopsStart[n];
+    if (!start && ScribeViewer.#pageStopsEnd[n]) return ScribeViewer.#pageStopsEnd[n];
 
-    ScribeCanvas.calcPageStops();
+    ScribeViewer.calcPageStops();
 
-    if (start && ScribeCanvas.#pageStopsStart[n]) return ScribeCanvas.#pageStopsStart[n];
-    if (!start && ScribeCanvas.#pageStopsEnd[n]) return ScribeCanvas.#pageStopsEnd[n];
+    if (start && ScribeViewer.#pageStopsStart[n]) return ScribeViewer.#pageStopsStart[n];
+    if (!start && ScribeViewer.#pageStopsEnd[n]) return ScribeViewer.#pageStopsEnd[n];
 
     // The `null` condition is only true briefly during initialization, and is not worth checking for every time throughout the program.
     // @ts-ignore
@@ -340,7 +340,7 @@ export class ScribeCanvas {
     const margin = 30;
     let y = margin;
     for (let i = 0; i < scribe.data.pageMetrics.length; i++) {
-      ScribeCanvas.#pageStopsStart[i] = y;
+      ScribeViewer.#pageStopsStart[i] = y;
       const dims = scribe.data.pageMetrics[i].dims;
       if (!dims) return;
 
@@ -348,12 +348,12 @@ export class ScribeCanvas {
       // This is true even when uploading a PDF with existing OCR data, as dims are defined before parsing the OCR data.
       const rotation = (scribe.data.pageMetrics[i].angle || 0) * -1;
       y += dims.height + margin;
-      ScribeCanvas.#pageStopsEnd[i] = y;
+      ScribeViewer.#pageStopsEnd[i] = y;
 
-      if (!ScribeCanvas.placeholderRectArr[i]) {
-        ScribeCanvas.placeholderRectArr[i] = new Konva.Rect({
+      if (!ScribeViewer.placeholderRectArr[i]) {
+        ScribeViewer.placeholderRectArr[i] = new Konva.Rect({
           x: 0,
-          y: ScribeCanvas.getPageStop(i),
+          y: ScribeViewer.getPageStop(i),
           width: dims.width,
           height: dims.height,
           stroke: 'black',
@@ -362,7 +362,7 @@ export class ScribeCanvas {
           listening: false,
           rotation,
         });
-        ScribeCanvas.layerBackground.add(ScribeCanvas.placeholderRectArr[i]);
+        ScribeViewer.layerBackground.add(ScribeViewer.placeholderRectArr[i]);
       }
     }
   };
@@ -372,8 +372,8 @@ export class ScribeCanvas {
  * @returns {{x: number, y: number}}
  */
   static getStageCenter = () => {
-    const layerWidth = ScribeCanvas.stage.width();
-    const layerHeight = ScribeCanvas.stage.height();
+    const layerWidth = ScribeViewer.stage.width();
+    const layerHeight = ScribeViewer.stage.height();
 
     // Calculate the center point of the layer before any transformations
     const centerPoint = {
@@ -419,7 +419,7 @@ export class ScribeCanvas {
    */
   static _zoomStage = (scaleBy, center = null) => {
     if (!center) {
-      const selectedWords = ScribeCanvas.CanvasSelection.getKonvaWords();
+      const selectedWords = ScribeViewer.CanvasSelection.getKonvaWords();
 
       // If words are selected, zoom in on the selection.
       if (selectedWords.length > 0) {
@@ -429,30 +429,30 @@ export class ScribeCanvas {
         const selectionBottom = Math.max(...selectedWords.map((x) => x.y() + x.height()));
         const center0 = { x: (selectionLeft + selectionRight) / 2, y: (selectionTop + selectionBottom) / 2 };
 
-        const transform = ScribeCanvas.layerText.getAbsoluteTransform();
+        const transform = ScribeViewer.layerText.getAbsoluteTransform();
 
         // Apply the transformation to the center point
         center = transform.point(center0);
 
         // Otherwise, zoom in on the center of the text layer.
       } else {
-        center = ScribeCanvas.getStageCenter();
+        center = ScribeViewer.getStageCenter();
       }
     }
 
-    ScribeCanvas._zoomStageImp(ScribeCanvas.stage, scaleBy, center);
+    ScribeViewer._zoomStageImp(ScribeViewer.stage, scaleBy, center);
 
-    if (!ScribeCanvas.updateCurrentPage()) {
-      ScribeCanvas.stage.batchDraw();
+    if (!ScribeViewer.updateCurrentPage()) {
+      ScribeViewer.stage.batchDraw();
     }
   };
 
   static updateCurrentPage = () => {
-    const y = (ScribeCanvas.stage.y() - ScribeCanvas.stage.height() / 2) / ScribeCanvas.stage.getAbsoluteScale().y * -1;
-    const pageNew = ScribeCanvas.calcPage(y);
+    const y = (ScribeViewer.stage.y() - ScribeViewer.stage.height() / 2) / ScribeViewer.stage.getAbsoluteScale().y * -1;
+    const pageNew = ScribeViewer.calcPage(y);
 
     if (stateViewer.cp.n !== pageNew && pageNew >= 0) {
-      ScribeCanvas.displayPage(pageNew, false, false);
+      ScribeViewer.displayPage(pageNew, false, false);
       return true;
     }
     return false;
@@ -465,37 +465,37 @@ export class ScribeCanvas {
    * @param {number} [coords.deltaY=0]
    */
   static panStage = ({ deltaX = 0, deltaY = 0 }) => {
-    const x = ScribeCanvas.stage.x();
-    const y = ScribeCanvas.stage.y();
+    const x = ScribeViewer.stage.x();
+    const y = ScribeViewer.stage.y();
 
     // Clip the inputs to prevent the user from panning the entire document outside of the viewport.
     if (stateViewer.cp.n === 0) {
-      const maxY = (ScribeCanvas.getPageStop(0) - 100) * ScribeCanvas.stage.getAbsoluteScale().y * -1 + ScribeCanvas.stage.height() / 2;
+      const maxY = (ScribeViewer.getPageStop(0) - 100) * ScribeViewer.stage.getAbsoluteScale().y * -1 + ScribeViewer.stage.height() / 2;
       const maxYDelta = Math.max(0, maxY - y);
       deltaY = Math.min(deltaY, maxYDelta);
     }
 
     if (stateViewer.cp.n === scribe.data.pageMetrics.length - 1) {
-      const minY = ScribeCanvas.getPageStop(stateViewer.cp.n, false) * ScribeCanvas.stage.getAbsoluteScale().y * -1
-        + ScribeCanvas.stage.height() / 2;
+      const minY = ScribeViewer.getPageStop(stateViewer.cp.n, false) * ScribeViewer.stage.getAbsoluteScale().y * -1
+        + ScribeViewer.stage.height() / 2;
       const minYDelta = Math.max(0, y - minY);
       deltaY = Math.max(deltaY, -minYDelta);
     }
 
-    const minX = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeCanvas.stage.getAbsoluteScale().y * -1;
+    const minX = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeViewer.stage.getAbsoluteScale().y * -1;
     const minXDelta = Math.max(0, x - minX);
     deltaX = Math.max(deltaX, -minXDelta);
 
-    const maxX = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeCanvas.stage.getAbsoluteScale().y * -1
-      + ScribeCanvas.stage.width();
+    const maxX = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeViewer.stage.getAbsoluteScale().y * -1
+      + ScribeViewer.stage.width();
     const maxXDelta = Math.max(0, maxX - x);
     deltaX = Math.min(deltaX, maxXDelta);
 
-    ScribeCanvas.stage.x(x + deltaX);
-    ScribeCanvas.stage.y(y + deltaY);
+    ScribeViewer.stage.x(x + deltaX);
+    ScribeViewer.stage.y(y + deltaY);
 
-    if (!ScribeCanvas.updateCurrentPage()) {
-      ScribeCanvas.stage.batchDraw();
+    if (!ScribeViewer.updateCurrentPage()) {
+      ScribeViewer.stage.batchDraw();
     }
   };
 
@@ -508,9 +508,9 @@ export class ScribeCanvas {
    *    If `null` (default), the center of the layer is used.
    */
   static zoom = (scaleBy, center = null) => {
-    ScribeCanvas.deleteHTMLOverlay();
-    ScribeCanvas._zoomStage(scaleBy, center);
-    if (ScribeCanvas.enableHTMLOverlay) ScribeCanvas.renderHTMLOverlayAfterDelay();
+    ScribeViewer.deleteHTMLOverlay();
+    ScribeViewer._zoomStage(scaleBy, center);
+    if (ScribeViewer.enableHTMLOverlay) ScribeViewer.renderHTMLOverlayAfterDelay();
   };
 
   /**
@@ -518,10 +518,10 @@ export class ScribeCanvas {
    * @param {MouseEvent} event
    */
   static startDrag = (event) => {
-    ScribeCanvas.deleteHTMLOverlay();
-    ScribeCanvas.drag.isDragging = true;
-    ScribeCanvas.drag.lastX = event.x;
-    ScribeCanvas.drag.lastY = event.y;
+    ScribeViewer.deleteHTMLOverlay();
+    ScribeViewer.drag.isDragging = true;
+    ScribeViewer.drag.lastX = event.x;
+    ScribeViewer.drag.lastY = event.y;
     event.preventDefault();
   };
 
@@ -530,10 +530,10 @@ export class ScribeCanvas {
    * @param {KonvaTouchEvent} event
    */
   static startDragTouch = (event) => {
-    ScribeCanvas.deleteHTMLOverlay();
-    ScribeCanvas.drag.isDragging = true;
-    ScribeCanvas.drag.lastX = event.evt.touches[0].clientX;
-    ScribeCanvas.drag.lastY = event.evt.touches[0].clientY;
+    ScribeViewer.deleteHTMLOverlay();
+    ScribeViewer.drag.isDragging = true;
+    ScribeViewer.drag.lastX = event.evt.touches[0].clientX;
+    ScribeViewer.drag.lastY = event.evt.touches[0].clientY;
     event.evt.preventDefault();
   };
 
@@ -542,20 +542,20 @@ export class ScribeCanvas {
    * @param {KonvaMouseEvent} event
    */
   static executeDrag = (event) => {
-    if (ScribeCanvas.drag.isDragging) {
-      const deltaX = event.evt.x - ScribeCanvas.drag.lastX;
-      const deltaY = event.evt.y - ScribeCanvas.drag.lastY;
+    if (ScribeViewer.drag.isDragging) {
+      const deltaX = event.evt.x - ScribeViewer.drag.lastX;
+      const deltaY = event.evt.y - ScribeViewer.drag.lastY;
 
       if (Math.round(deltaX) === 0 && Math.round(deltaY) === 0) return;
 
       // This is an imprecise heuristic, so not bothering to calculate distance properly.
-      ScribeCanvas.drag.dragDeltaTotal += Math.abs(deltaX);
-      ScribeCanvas.drag.dragDeltaTotal += Math.abs(deltaY);
+      ScribeViewer.drag.dragDeltaTotal += Math.abs(deltaX);
+      ScribeViewer.drag.dragDeltaTotal += Math.abs(deltaY);
 
-      ScribeCanvas.drag.lastX = event.evt.x;
-      ScribeCanvas.drag.lastY = event.evt.y;
+      ScribeViewer.drag.lastX = event.evt.x;
+      ScribeViewer.drag.lastY = event.evt.y;
 
-      ScribeCanvas.panStage({ deltaX, deltaY });
+      ScribeViewer.panStage({ deltaX, deltaY });
     }
   };
 
@@ -563,13 +563,13 @@ export class ScribeCanvas {
    * @param {KonvaTouchEvent} event
    */
   static executeDragTouch = (event) => {
-    if (ScribeCanvas.drag.isDragging) {
-      const deltaX = event.evt.touches[0].clientX - ScribeCanvas.drag.lastX;
-      const deltaY = event.evt.touches[0].clientY - ScribeCanvas.drag.lastY;
-      ScribeCanvas.drag.lastX = event.evt.touches[0].clientX;
-      ScribeCanvas.drag.lastY = event.evt.touches[0].clientY;
+    if (ScribeViewer.drag.isDragging) {
+      const deltaX = event.evt.touches[0].clientX - ScribeViewer.drag.lastX;
+      const deltaY = event.evt.touches[0].clientY - ScribeViewer.drag.lastY;
+      ScribeViewer.drag.lastX = event.evt.touches[0].clientX;
+      ScribeViewer.drag.lastY = event.evt.touches[0].clientY;
 
-      ScribeCanvas.panStage({ deltaX, deltaY });
+      ScribeViewer.panStage({ deltaX, deltaY });
     }
   };
 
@@ -578,13 +578,13 @@ export class ScribeCanvas {
    * @param {KonvaMouseEvent|KonvaTouchEvent} event
    */
   static stopDragPinch = (event) => {
-    ScribeCanvas.drag.isDragging = false;
-    ScribeCanvas.drag.isPinching = false;
-    ScribeCanvas.drag.dragDeltaTotal = 0;
-    ScribeCanvas.drag.lastCenter = null;
-    ScribeCanvas.drag.lastDist = null;
-    if (ScribeCanvas.enableHTMLOverlay && ScribeCanvas._wordHTMLArr.length === 0) {
-      ScribeCanvas.renderHTMLOverlay();
+    ScribeViewer.drag.isDragging = false;
+    ScribeViewer.drag.isPinching = false;
+    ScribeViewer.drag.dragDeltaTotal = 0;
+    ScribeViewer.drag.lastCenter = null;
+    ScribeViewer.drag.lastDist = null;
+    if (ScribeViewer.enableHTMLOverlay && ScribeViewer._wordHTMLArr.length === 0) {
+      ScribeViewer.renderHTMLOverlay();
     }
   };
 
@@ -592,11 +592,11 @@ export class ScribeCanvas {
    * @param {KonvaTouchEvent} event
    */
   static executePinchTouch = (event) => {
-    ScribeCanvas.deleteHTMLOverlay();
+    ScribeViewer.deleteHTMLOverlay();
     const touch1 = event.evt.touches[0];
     const touch2 = event.evt.touches[1];
     if (!touch1 || !touch2) return;
-    ScribeCanvas.drag.isPinching = true;
+    ScribeViewer.drag.isPinching = true;
     const p1 = {
       x: touch1.clientX,
       y: touch1.clientY,
@@ -609,15 +609,15 @@ export class ScribeCanvas {
     const center = getCenter(p1, p2);
     const dist = getDistance(p1, p2);
 
-    if (!ScribeCanvas.drag.lastDist || !ScribeCanvas.drag.lastCenter) {
-      ScribeCanvas.drag.lastCenter = center;
-      ScribeCanvas.drag.lastDist = dist;
+    if (!ScribeViewer.drag.lastDist || !ScribeViewer.drag.lastCenter) {
+      ScribeViewer.drag.lastCenter = center;
+      ScribeViewer.drag.lastDist = dist;
       return;
     }
 
-    ScribeCanvas._zoomStage(dist / ScribeCanvas.drag.lastDist, center);
-    ScribeCanvas.drag.lastDist = dist;
-    if (ScribeCanvas.enableHTMLOverlay) ScribeCanvas.renderHTMLOverlayAfterDelay();
+    ScribeViewer._zoomStage(dist / ScribeViewer.drag.lastDist, center);
+    ScribeViewer.drag.lastDist = dist;
+    if (ScribeViewer.enableHTMLOverlay) ScribeViewer.renderHTMLOverlayAfterDelay();
   };
 
   /**
@@ -641,7 +641,7 @@ export class ScribeCanvas {
   static init(elem, width, height) {
     this.elem = elem;
 
-    ScribeCanvas.stage = new Konva.Stage({
+    ScribeViewer.stage = new Konva.Stage({
       container: elem,
       // width: document.documentElement.clientWidth,
       // height: document.documentElement.clientHeight,
@@ -652,106 +652,106 @@ export class ScribeCanvas {
 
     });
 
-    ScribeCanvas.stage.on('contextmenu', contextMenuFunc);
+    ScribeViewer.stage.on('contextmenu', contextMenuFunc);
 
-    ScribeCanvas.HTMLOverlayBackstopElem = document.createElement('div');
-    ScribeCanvas.HTMLOverlayBackstopElem.className = 'endOfContent';
-    ScribeCanvas.HTMLOverlayBackstopElem.style.position = 'absolute';
-    ScribeCanvas.HTMLOverlayBackstopElem.style.top = '0';
-    ScribeCanvas.HTMLOverlayBackstopElem.style.left = '0';
-    ScribeCanvas.HTMLOverlayBackstopElem.style.width = `${width}px`;
-    ScribeCanvas.HTMLOverlayBackstopElem.style.height = `${height}px`;
-    ScribeCanvas.HTMLOverlayBackstopElem.style.display = 'none';
+    ScribeViewer.HTMLOverlayBackstopElem = document.createElement('div');
+    ScribeViewer.HTMLOverlayBackstopElem.className = 'endOfContent';
+    ScribeViewer.HTMLOverlayBackstopElem.style.position = 'absolute';
+    ScribeViewer.HTMLOverlayBackstopElem.style.top = '0';
+    ScribeViewer.HTMLOverlayBackstopElem.style.left = '0';
+    ScribeViewer.HTMLOverlayBackstopElem.style.width = `${width}px`;
+    ScribeViewer.HTMLOverlayBackstopElem.style.height = `${height}px`;
+    ScribeViewer.HTMLOverlayBackstopElem.style.display = 'none';
 
-    ScribeCanvas.layerBackground = new Konva.Layer();
-    ScribeCanvas.layerText = new Konva.Layer();
-    ScribeCanvas.layerOverlay = new Konva.Layer();
+    ScribeViewer.layerBackground = new Konva.Layer();
+    ScribeViewer.layerText = new Konva.Layer();
+    ScribeViewer.layerOverlay = new Konva.Layer();
 
-    ScribeCanvas.stage.add(ScribeCanvas.layerBackground);
-    ScribeCanvas.stage.add(ScribeCanvas.layerText);
-    ScribeCanvas.stage.add(ScribeCanvas.layerOverlay);
+    ScribeViewer.stage.add(ScribeViewer.layerBackground);
+    ScribeViewer.stage.add(ScribeViewer.layerText);
+    ScribeViewer.stage.add(ScribeViewer.layerOverlay);
 
-    ScribeCanvas.selectingRectangle = new Konva.Rect({
+    ScribeViewer.selectingRectangle = new Konva.Rect({
       fill: 'rgba(40,123,181,0.5)',
       visible: true,
       // disable events to not interrupt with events
       listening: false,
     });
 
-    ScribeCanvas.layerText.add(ScribeCanvas.selectingRectangle);
+    ScribeViewer.layerText.add(ScribeViewer.selectingRectangle);
 
-    ScribeCanvas.stage.on('mousemove', ScribeCanvas.executeDrag);
+    ScribeViewer.stage.on('mousemove', ScribeViewer.executeDrag);
 
-    ScribeCanvas.stage.on('touchstart', (event) => {
-      if (ScribeCanvas.mode === 'select') {
+    ScribeViewer.stage.on('touchstart', (event) => {
+      if (ScribeViewer.mode === 'select') {
         if (event.evt.touches[1]) {
-          ScribeCanvas.executePinchTouch(event);
+          ScribeViewer.executePinchTouch(event);
         } else {
-          ScribeCanvas.startDragTouch(event);
+          ScribeViewer.startDragTouch(event);
         }
       }
     });
 
-    ScribeCanvas.stage.on('touchmove', (event) => {
+    ScribeViewer.stage.on('touchmove', (event) => {
       if (event.evt.touches[1]) {
-        ScribeCanvas.executePinchTouch(event);
-      } else if (ScribeCanvas.drag.isDragging) {
-        ScribeCanvas.executeDragTouch(event);
+        ScribeViewer.executePinchTouch(event);
+      } else if (ScribeViewer.drag.isDragging) {
+        ScribeViewer.executeDragTouch(event);
       }
     });
 
-    ScribeCanvas.stage.on('mousedown touchstart', (event) => {
+    ScribeViewer.stage.on('mousedown touchstart', (event) => {
       if (scribe.data.pageMetrics.length === 0) return;
 
       // Left click only
       if (event.type === 'mousedown' && event.evt.button !== 0) return;
 
-      if (!ScribeCanvas.enableCanvasSelection) return;
+      if (!ScribeViewer.enableCanvasSelection) return;
 
       mouseDownTarget = event.target;
 
-      if (ScribeCanvas.isTouchScreen && ScribeCanvas.mode === 'select') return;
+      if (ScribeViewer.isTouchScreen && ScribeViewer.mode === 'select') return;
 
       // Move selection rectangle to top.
-      ScribeCanvas.selectingRectangle.zIndex(ScribeCanvas.layerText.children.length - 1);
+      ScribeViewer.selectingRectangle.zIndex(ScribeViewer.layerText.children.length - 1);
 
       event.evt.preventDefault();
-      const startCoords = ScribeCanvas.layerText.getRelativePointerPosition() || { x: 0, y: 0 };
-      ScribeCanvas.bbox.left = startCoords.x;
-      ScribeCanvas.bbox.top = startCoords.y;
-      ScribeCanvas.bbox.right = startCoords.x;
-      ScribeCanvas.bbox.bottom = startCoords.y;
+      const startCoords = ScribeViewer.layerText.getRelativePointerPosition() || { x: 0, y: 0 };
+      ScribeViewer.bbox.left = startCoords.x;
+      ScribeViewer.bbox.top = startCoords.y;
+      ScribeViewer.bbox.right = startCoords.x;
+      ScribeViewer.bbox.bottom = startCoords.y;
 
-      ScribeCanvas.selectingRectangle.width(0);
-      ScribeCanvas.selectingRectangle.height(0);
-      ScribeCanvas.selecting = true;
+      ScribeViewer.selectingRectangle.width(0);
+      ScribeViewer.selectingRectangle.height(0);
+      ScribeViewer.selecting = true;
     });
 
-    ScribeCanvas.stage.on('mousemove touchmove', (e) => {
+    ScribeViewer.stage.on('mousemove touchmove', (e) => {
       e.evt.preventDefault();
       // do nothing if we didn't start selection
-      if (!ScribeCanvas.selecting) {
+      if (!ScribeViewer.selecting) {
         return;
       }
       e.evt.preventDefault();
-      const endCoords = ScribeCanvas.layerText.getRelativePointerPosition();
+      const endCoords = ScribeViewer.layerText.getRelativePointerPosition();
       if (!endCoords) return;
 
-      ScribeCanvas.bbox.right = endCoords.x;
-      ScribeCanvas.bbox.bottom = endCoords.y;
+      ScribeViewer.bbox.right = endCoords.x;
+      ScribeViewer.bbox.bottom = endCoords.y;
 
-      ScribeCanvas.selectingRectangle.setAttrs({
+      ScribeViewer.selectingRectangle.setAttrs({
         visible: true,
-        x: Math.min(ScribeCanvas.bbox.left, ScribeCanvas.bbox.right),
-        y: Math.min(ScribeCanvas.bbox.top, ScribeCanvas.bbox.bottom),
-        width: Math.abs(ScribeCanvas.bbox.right - ScribeCanvas.bbox.left),
-        height: Math.abs(ScribeCanvas.bbox.bottom - ScribeCanvas.bbox.top),
+        x: Math.min(ScribeViewer.bbox.left, ScribeViewer.bbox.right),
+        y: Math.min(ScribeViewer.bbox.top, ScribeViewer.bbox.bottom),
+        width: Math.abs(ScribeViewer.bbox.right - ScribeViewer.bbox.left),
+        height: Math.abs(ScribeViewer.bbox.bottom - ScribeViewer.bbox.top),
       });
 
-      ScribeCanvas.layerText.batchDraw();
+      ScribeViewer.layerText.batchDraw();
     });
 
-    ScribeCanvas.stage.on('mouseup touchend', (event) => {
+    ScribeViewer.stage.on('mouseup touchend', (event) => {
       // const navBarElem = /** @type {HTMLDivElement} */(document.getElementById('navBar'));
       // const activeElem = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       // if (activeElem && navBarElem.contains(activeElem)) activeElem.blur();
@@ -764,48 +764,48 @@ export class ScribeCanvas {
 
       const mouseUpTarget = event.target;
 
-      const editingWord = !!ScribeCanvas.KonvaIText.input;
+      const editingWord = !!ScribeViewer.KonvaIText.input;
 
       // If a word is being edited, the only action allowed is clicking outside the word to deselect it.
       if (editingWord) {
-        if (mouseDownTarget === ScribeCanvas.KonvaIText.inputWord || mouseUpTarget === ScribeCanvas.KonvaIText.inputWord) {
-          ScribeCanvas.selecting = false;
+        if (mouseDownTarget === ScribeViewer.KonvaIText.inputWord || mouseUpTarget === ScribeViewer.KonvaIText.inputWord) {
+          ScribeViewer.selecting = false;
           return;
         }
-        ScribeCanvas.destroyControls();
-        ScribeCanvas.layerText.batchDraw();
+        ScribeViewer.destroyControls();
+        ScribeViewer.layerText.batchDraw();
 
       // Delete any current selections if either (1) this is a new selection or (2) nothing is being clicked.
       // Clicks must pass this check on both start and end.
       // This prevents accidentally clearing a selection when the user is trying to highlight specific letters, but the mouse up happens over another word.
       } else if (event.evt.button === 0 && (mouseUpTarget instanceof Konva.Stage || mouseUpTarget instanceof Konva.Image)
-        && (ScribeCanvas.selecting || event.target instanceof Konva.Stage || event.target instanceof Konva.Image)) {
-        ScribeCanvas.destroyControls();
+        && (ScribeViewer.selecting || event.target instanceof Konva.Stage || event.target instanceof Konva.Image)) {
+        ScribeViewer.destroyControls();
       }
 
-      ScribeCanvas.selecting = false;
+      ScribeViewer.selecting = false;
 
       // Return early if this was a drag or pinch rather than a selection.
       // `isDragging` will be true even for a touch event, so a minimum distance moved is required to differentiate between a click and a drag.
-      if (event.evt.button === 1 || (ScribeCanvas.drag.isDragging && ScribeCanvas.drag.dragDeltaTotal > 10) || ScribeCanvas.drag.isPinching || ScribeCanvas.drag.isResizingColumns) {
-        ScribeCanvas.stopDragPinch(event);
+      if (event.evt.button === 1 || (ScribeViewer.drag.isDragging && ScribeViewer.drag.dragDeltaTotal > 10) || ScribeViewer.drag.isPinching || ScribeViewer.drag.isResizingColumns) {
+        ScribeViewer.stopDragPinch(event);
         return;
       }
 
       mouseupFunc2(event);
 
-      ScribeCanvas.mode = 'select';
+      ScribeViewer.mode = 'select';
 
-      ScribeCanvas.layerText.batchDraw();
+      ScribeViewer.layerText.batchDraw();
     });
   }
 
   static renderHTMLOverlay = () => {
-    const words = ScribeCanvas.getKonvaWords();
+    const words = ScribeViewer.getKonvaWords();
     words.forEach((word) => {
       const elem = KonvaIText.itextToElem(word);
-      ScribeCanvas._wordHTMLArr.push(elem);
-      ScribeCanvas.elem.appendChild(elem);
+      ScribeViewer._wordHTMLArr.push(elem);
+      ScribeViewer.elem.appendChild(elem);
     });
   };
 
@@ -817,22 +817,22 @@ export class ScribeCanvas {
    * such as scrolling or zooming, which can result in performance issues if the overlay is rendered too frequently.
    */
   static renderHTMLOverlayAfterDelay = () => {
-    ScribeCanvas._renderHTMLOverlayEvents++;
-    const eventN = ScribeCanvas._renderHTMLOverlayEvents;
+    ScribeViewer._renderHTMLOverlayEvents++;
+    const eventN = ScribeViewer._renderHTMLOverlayEvents;
     setTimeout(() => {
-      if (eventN === ScribeCanvas._renderHTMLOverlayEvents && ScribeCanvas._wordHTMLArr.length === 0) {
-        ScribeCanvas.renderHTMLOverlay();
+      if (eventN === ScribeViewer._renderHTMLOverlayEvents && ScribeViewer._wordHTMLArr.length === 0) {
+        ScribeViewer.renderHTMLOverlay();
       }
     }, 200);
   };
 
   static deleteHTMLOverlay = () => {
-    ScribeCanvas._wordHTMLArr.forEach((elem) => {
+    ScribeViewer._wordHTMLArr.forEach((elem) => {
       if (elem.parentNode) {
         elem.parentNode.removeChild(elem);
       }
     });
-    ScribeCanvas._wordHTMLArr.length = 0;
+    ScribeViewer._wordHTMLArr.length = 0;
   };
 
   static runSetInitial = true;
@@ -842,7 +842,7 @@ export class ScribeCanvas {
    * @param {dims} imgDims - Dimensions of image
    */
   static setInitialPositionZoom = (imgDims) => {
-    ScribeCanvas.runSetInitial = false;
+    ScribeViewer.runSetInitial = false;
 
     const totalHeight = document.documentElement.clientHeight;
 
@@ -852,10 +852,10 @@ export class ScribeCanvas {
 
     const zoom = targetHeight / imgDims.height;
 
-    ScribeCanvas.stage.scaleX(zoom);
-    ScribeCanvas.stage.scaleY(zoom);
-    ScribeCanvas.stage.x(((ScribeCanvas.stage.width() - (imgDims.width * zoom)) / 2));
-    ScribeCanvas.stage.y(interfaceHeight);
+    ScribeViewer.stage.scaleX(zoom);
+    ScribeViewer.stage.scaleY(zoom);
+    ScribeViewer.stage.x(((ScribeViewer.stage.width() - (imgDims.width * zoom)) / 2));
+    ScribeViewer.stage.y(interfaceHeight);
   };
 
   // Function that handles page-level info for rendering to canvas
@@ -871,25 +871,25 @@ export class ScribeCanvas {
     const xmlMissing = scribe.inputData.xmlMode[n]
     && (ocrData === undefined || ocrData === null || scribe.data.pageMetrics[n].dims === undefined);
 
-    const pageStopsMissing = ScribeCanvas.getPageStop(n) === null;
+    const pageStopsMissing = ScribeViewer.getPageStop(n) === null;
 
     const imageMissing = false;
     const pdfMissing = false;
 
-    const group = ScribeCanvas.getTextGroup(n);
+    const group = ScribeViewer.getTextGroup(n);
     group.destroyChildren();
-    if (ScribeCanvas.KonvaIText.inputWord && ScribeCanvas.KonvaIText.inputWord.word.line.page.n === n
-      && ScribeCanvas.KonvaIText.inputRemove
+    if (ScribeViewer.KonvaIText.inputWord && ScribeViewer.KonvaIText.inputWord.word.line.page.n === n
+      && ScribeViewer.KonvaIText.inputRemove
     ) {
-      ScribeCanvas.KonvaIText.inputRemove();
+      ScribeViewer.KonvaIText.inputRemove();
     }
-    ScribeCanvas.CanvasSelection.deselectAllWords(n);
+    ScribeViewer.CanvasSelection.deselectAllWords(n);
 
     if (noInfo || noInput || xmlMissing || imageMissing || pdfMissing || pageStopsMissing) {
       return;
     }
 
-    if (ScribeCanvas.runSetInitial) ScribeCanvas.setInitialPositionZoom(scribe.data.pageMetrics[n].dims);
+    if (ScribeViewer.runSetInitial) ScribeViewer.setInitialPositionZoom(scribe.data.pageMetrics[n].dims);
 
     if (scribe.inputData.evalMode) {
       await compareGroundTruth();
@@ -903,22 +903,22 @@ export class ScribeCanvas {
   };
 
   /**
-  * Render page `n` in the UI.
-  * @param {number} n
-  * @param {boolean} [scroll=false] - Scroll to the top of the page being rendered.
-  * @param {boolean} [refresh=true] - Refresh the page even if it is already displayed.
-  * @returns
-  */
+    * Render page `n` in the UI.
+    * @param {number} n
+    * @param {boolean} [scroll=false] - Scroll to the top of the page being rendered.
+    * @param {boolean} [refresh=true] - Refresh the page even if it is already displayed.
+    * @returns
+    */
   static async displayPage(n, scroll = false, refresh = true) {
     // Return early if (1) page does not exist or (2) another page is actively being rendered.
     if (Number.isNaN(n) || n < 0 || n > (scribe.inputData.pageCount - 1)) {
       // Reset the value of pageNumElem (number in UI) to match the internal value of the page
       // elem.nav.pageNum.value = (stateGUI.cp.n + 1).toString();
-      if (ScribeCanvas.displayPageCallback) ScribeCanvas.displayPageCallback();
+      if (ScribeViewer.displayPageCallback) ScribeViewer.displayPageCallback();
       return;
     }
 
-    ScribeCanvas.deleteHTMLOverlay();
+    ScribeViewer.deleteHTMLOverlay();
 
     if (scribe.inputData.xmlMode[stateViewer.cp.n]) {
       // TODO: This is currently run whenever the page is changed.
@@ -927,51 +927,51 @@ export class ScribeCanvas {
     }
 
     if (scribe.opt.displayMode === 'ebook') {
-      ScribeCanvas.layerBackground.hide();
-      ScribeCanvas.layerBackground.batchDraw();
+      ScribeViewer.layerBackground.hide();
+      ScribeViewer.layerBackground.batchDraw();
     } else {
-      ScribeCanvas.layerBackground.show();
-      ScribeCanvas.layerBackground.batchDraw();
+      ScribeViewer.layerBackground.show();
+      ScribeViewer.layerBackground.batchDraw();
     }
 
-    ScribeCanvas.textOverlayHidden = false;
+    ScribeViewer.textOverlayHidden = false;
 
-    if (refresh || !ScribeCanvas.textGroupsRenderIndices.includes(n)) {
-      await ScribeCanvas.renderWords(n);
+    if (refresh || !ScribeViewer.textGroupsRenderIndices.includes(n)) {
+      await ScribeViewer.renderWords(n);
     }
 
-    if (n - 1 >= 0 && (refresh || !ScribeCanvas.textGroupsRenderIndices.includes(n - 1))) {
-      await ScribeCanvas.renderWords(n - 1);
+    if (n - 1 >= 0 && (refresh || !ScribeViewer.textGroupsRenderIndices.includes(n - 1))) {
+      await ScribeViewer.renderWords(n - 1);
     }
-    if (n + 1 < scribe.data.ocr.active.length && (refresh || !ScribeCanvas.textGroupsRenderIndices.includes(n + 1))) {
-      await ScribeCanvas.renderWords(n + 1);
+    if (n + 1 < scribe.data.ocr.active.length && (refresh || !ScribeViewer.textGroupsRenderIndices.includes(n + 1))) {
+      await ScribeViewer.renderWords(n + 1);
     }
 
     if (scroll) {
-      ScribeCanvas.stage.y((ScribeCanvas.getPageStop(n) - 100) * ScribeCanvas.stage.getAbsoluteScale().y * -1);
+      ScribeViewer.stage.y((ScribeViewer.getPageStop(n) - 100) * ScribeViewer.stage.getAbsoluteScale().y * -1);
     }
 
-    ScribeCanvas.layerText.batchDraw();
+    ScribeViewer.layerText.batchDraw();
 
     stateViewer.cp.n = n;
 
-    ScribeCanvas.destroyText();
-    ScribeCanvas.destroyOverlay();
+    ScribeViewer.destroyText();
+    ScribeViewer.destroyOverlay();
 
-    if (ScribeCanvas.enableHTMLOverlay && !ScribeCanvas.drag.isDragging && !ScribeCanvas.drag.isPinching) {
-      ScribeCanvas.renderHTMLOverlayAfterDelay();
+    if (ScribeViewer.enableHTMLOverlay && !ScribeViewer.drag.isDragging && !ScribeViewer.drag.isPinching) {
+      ScribeViewer.renderHTMLOverlayAfterDelay();
     }
 
-    if (ScribeCanvas.displayPageCallback) ScribeCanvas.displayPageCallback();
+    if (ScribeViewer.displayPageCallback) ScribeViewer.displayPageCallback();
 
     if (stateViewer.layoutMode) {
-      if (refresh || !ScribeCanvas.overlayGroupsRenderIndices.includes(n)) {
+      if (refresh || !ScribeViewer.overlayGroupsRenderIndices.includes(n)) {
         await layout.renderLayoutBoxes(n);
       }
-      if (n - 1 >= 0 && (refresh || !ScribeCanvas.overlayGroupsRenderIndices.includes(n - 1))) {
+      if (n - 1 >= 0 && (refresh || !ScribeViewer.overlayGroupsRenderIndices.includes(n - 1))) {
         await layout.renderLayoutBoxes(n - 1);
       }
-      if (n + 1 < scribe.data.ocr.active.length && (refresh || !ScribeCanvas.overlayGroupsRenderIndices.includes(n + 1))) {
+      if (n + 1 < scribe.data.ocr.active.length && (refresh || !ScribeViewer.overlayGroupsRenderIndices.includes(n + 1))) {
         await layout.renderLayoutBoxes(n + 1);
       }
     }
@@ -1006,7 +1006,7 @@ export class ScribeCanvas {
     const dims = scribe.data.pageMetrics[n].dims;
     const angle = scribe.data.pageMetrics[n].angle || 0;
     const textRotation = scribe.opt.autoRotate ? 0 : angle;
-    const pageOffsetY = ScribeCanvas.getPageStop(n) ?? 30;
+    const pageOffsetY = ScribeViewer.getPageStop(n) ?? 30;
     group.rotation(textRotation);
     group.offset({ x: dims.width * 0.5, y: dims.height * 0.5 });
     group.position({ x: dims.width * 0.5, y: pageOffsetY + dims.height * 0.5 });
@@ -1019,11 +1019,11 @@ export class ScribeCanvas {
    * @returns
    */
   static getTextGroup = (n) => {
-    if (!ScribeCanvas.#textGroups[n]) {
-      ScribeCanvas.#textGroups[n] = ScribeCanvas.createGroup(n);
-      ScribeCanvas.layerText.add(ScribeCanvas.#textGroups[n]);
+    if (!ScribeViewer.#textGroups[n]) {
+      ScribeViewer.#textGroups[n] = ScribeViewer.createGroup(n);
+      ScribeViewer.layerText.add(ScribeViewer.#textGroups[n]);
     }
-    return ScribeCanvas.#textGroups[n];
+    return ScribeViewer.#textGroups[n];
   };
 
   /** @type {Array<InstanceType<typeof Konva.Group>>} */
@@ -1035,11 +1035,11 @@ export class ScribeCanvas {
    * @returns
    */
   static getOverlayGroup = (n) => {
-    if (!ScribeCanvas.#overlayGroups[n]) {
-      ScribeCanvas.#overlayGroups[n] = ScribeCanvas.createGroup(n);
-      ScribeCanvas.layerOverlay.add(ScribeCanvas.#overlayGroups[n]);
+    if (!ScribeViewer.#overlayGroups[n]) {
+      ScribeViewer.#overlayGroups[n] = ScribeViewer.createGroup(n);
+      ScribeViewer.layerOverlay.add(ScribeViewer.#overlayGroups[n]);
     }
-    return ScribeCanvas.#overlayGroups[n];
+    return ScribeViewer.#overlayGroups[n];
   };
 
   /** @type {Array<number>} */
@@ -1056,18 +1056,18 @@ export class ScribeCanvas {
    */
   static calcPage = (y) => {
     // Force page stops to be calculated if they are not already.
-    if (ScribeCanvas.#pageStopsEnd[ScribeCanvas.#pageStopsEnd.length - 1] === undefined) {
-      ScribeCanvas.calcPageStops();
+    if (ScribeViewer.#pageStopsEnd[ScribeViewer.#pageStopsEnd.length - 1] === undefined) {
+      ScribeViewer.calcPageStops();
     }
-    return ScribeCanvas.#pageStopsEnd.findIndex((y1) => y1 > y);
+    return ScribeViewer.#pageStopsEnd.findIndex((y1) => y1 > y);
   };
 
   static calcSelectionImageCoords = () => {
-    const y = ScribeCanvas.selectingRectangle.y();
-    const n = ScribeCanvas.calcPage(y);
+    const y = ScribeViewer.selectingRectangle.y();
+    const n = ScribeViewer.calcPage(y);
 
-    const box = ScribeCanvas.selectingRectangle.getClientRect({ relativeTo: ScribeCanvas.layerText });
-    box.y -= ScribeCanvas.getPageStop(n);
+    const box = ScribeViewer.selectingRectangle.getClientRect({ relativeTo: ScribeViewer.layerText });
+    box.y -= ScribeViewer.getPageStop(n);
 
     const canvasCoordsPage = {
       left: box.x, top: box.y, width: box.width, height: box.height,
@@ -1143,6 +1143,8 @@ export class ScribeCanvas {
 
   static compareGroundTruth = compareGroundTruth;
 
+  static renderCanvasWords = renderCanvasWords;
+
   static evalStats = evalStats;
 
   /** @type {bbox} */
@@ -1171,18 +1173,18 @@ export class ScribeCanvas {
   static getKonvaWords = () => {
     /** @type {Array<KonvaOcrWord>} */
     const words = [];
-    if (ScribeCanvas.#textGroups[stateViewer.cp.n - 1]?.children) {
-      ScribeCanvas.#textGroups[stateViewer.cp.n - 1].children.forEach((x) => {
+    if (ScribeViewer.#textGroups[stateViewer.cp.n - 1]?.children) {
+      ScribeViewer.#textGroups[stateViewer.cp.n - 1].children.forEach((x) => {
         if (x instanceof KonvaOcrWord) words.push(x);
       });
     }
-    if (ScribeCanvas.#textGroups[stateViewer.cp.n]?.children) {
-      ScribeCanvas.#textGroups[stateViewer.cp.n].children.forEach((x) => {
+    if (ScribeViewer.#textGroups[stateViewer.cp.n]?.children) {
+      ScribeViewer.#textGroups[stateViewer.cp.n].children.forEach((x) => {
         if (x instanceof KonvaOcrWord) words.push(x);
       });
     }
-    if (ScribeCanvas.#textGroups[stateViewer.cp.n + 1]?.children) {
-      ScribeCanvas.#textGroups[stateViewer.cp.n + 1].children.forEach((x) => {
+    if (ScribeViewer.#textGroups[stateViewer.cp.n + 1]?.children) {
+      ScribeViewer.#textGroups[stateViewer.cp.n + 1].children.forEach((x) => {
         if (x instanceof KonvaOcrWord) words.push(x);
       });
     }
@@ -1193,18 +1195,18 @@ export class ScribeCanvas {
   static getKonvaRegions = () => {
     /** @type {Array<KonvaRegion>} */
     const regions = [];
-    if (ScribeCanvas.#overlayGroups[stateViewer.cp.n - 1]?.children) {
-      ScribeCanvas.#overlayGroups[stateViewer.cp.n - 1].children.forEach((x) => {
+    if (ScribeViewer.#overlayGroups[stateViewer.cp.n - 1]?.children) {
+      ScribeViewer.#overlayGroups[stateViewer.cp.n - 1].children.forEach((x) => {
         if (x instanceof KonvaRegion) regions.push(x);
       });
     }
-    if (ScribeCanvas.#overlayGroups[stateViewer.cp.n]?.children) {
-      ScribeCanvas.#overlayGroups[stateViewer.cp.n].children.forEach((x) => {
+    if (ScribeViewer.#overlayGroups[stateViewer.cp.n]?.children) {
+      ScribeViewer.#overlayGroups[stateViewer.cp.n].children.forEach((x) => {
         if (x instanceof KonvaRegion) regions.push(x);
       });
     }
-    if (ScribeCanvas.#overlayGroups[stateViewer.cp.n + 1]?.children) {
-      ScribeCanvas.#overlayGroups[stateViewer.cp.n + 1].children.forEach((x) => {
+    if (ScribeViewer.#overlayGroups[stateViewer.cp.n + 1]?.children) {
+      ScribeViewer.#overlayGroups[stateViewer.cp.n + 1].children.forEach((x) => {
         if (x instanceof KonvaRegion) regions.push(x);
       });
     }
@@ -1215,18 +1217,18 @@ export class ScribeCanvas {
   static getKonvaDataColumns = () => {
     /** @type {Array<KonvaDataColumn>} */
     const columns = [];
-    if (ScribeCanvas.#overlayGroups[stateViewer.cp.n - 1]?.children) {
-      ScribeCanvas.#overlayGroups[stateViewer.cp.n - 1].children.forEach((x) => {
+    if (ScribeViewer.#overlayGroups[stateViewer.cp.n - 1]?.children) {
+      ScribeViewer.#overlayGroups[stateViewer.cp.n - 1].children.forEach((x) => {
         if (x instanceof KonvaDataColumn) columns.push(x);
       });
     }
-    if (ScribeCanvas.#overlayGroups[stateViewer.cp.n]?.children) {
-      ScribeCanvas.#overlayGroups[stateViewer.cp.n].children.forEach((x) => {
+    if (ScribeViewer.#overlayGroups[stateViewer.cp.n]?.children) {
+      ScribeViewer.#overlayGroups[stateViewer.cp.n].children.forEach((x) => {
         if (x instanceof KonvaDataColumn) columns.push(x);
       });
     }
-    if (ScribeCanvas.#overlayGroups[stateViewer.cp.n + 1]?.children) {
-      ScribeCanvas.#overlayGroups[stateViewer.cp.n + 1].children.forEach((x) => {
+    if (ScribeViewer.#overlayGroups[stateViewer.cp.n + 1]?.children) {
+      ScribeViewer.#overlayGroups[stateViewer.cp.n + 1].children.forEach((x) => {
         if (x instanceof KonvaDataColumn) columns.push(x);
       });
     }
@@ -1234,9 +1236,9 @@ export class ScribeCanvas {
     return columns;
   };
 
-  static getDataTables = () => ([...new Set(ScribeCanvas.getKonvaDataColumns().map((x) => x.layoutBox.table))]);
+  static getDataTables = () => ([...new Set(ScribeViewer.getKonvaDataColumns().map((x) => x.layoutBox.table))]);
 
-  static getKonvaDataTables = () => ([...new Set(ScribeCanvas.getKonvaDataColumns().map((x) => x.konvaTable))]);
+  static getKonvaDataTables = () => ([...new Set(ScribeViewer.getKonvaDataColumns().map((x) => x.konvaTable))]);
 
   /**
    *
@@ -1244,14 +1246,14 @@ export class ScribeCanvas {
    */
   static destroyControls = (deselect = true) => {
     // elem.edit.collapseRangeBaselineBS.hide();
-    ScribeCanvas.KonvaOcrWord._controlArr.forEach((control) => control.destroy());
-    ScribeCanvas.KonvaOcrWord._controlArr.length = 0;
+    ScribeViewer.KonvaOcrWord._controlArr.forEach((control) => control.destroy());
+    ScribeViewer.KonvaOcrWord._controlArr.length = 0;
 
-    if (deselect) ScribeCanvas.CanvasSelection.deselectAll();
+    if (deselect) ScribeViewer.CanvasSelection.deselectAll();
 
-    if (ScribeCanvas.KonvaIText.inputRemove) ScribeCanvas.KonvaIText.inputRemove();
+    if (ScribeViewer.KonvaIText.inputRemove) ScribeViewer.KonvaIText.inputRemove();
 
-    ScribeCanvas.destroyControlsCallback(deselect);
+    ScribeViewer.destroyControlsCallback(deselect);
   };
 
   /**
@@ -1259,11 +1261,11 @@ export class ScribeCanvas {
    * @param {boolean} [outsideViewOnly=true] - If `true`, only destroy objects outside the current view.
    */
   static destroyOverlay = (outsideViewOnly = true) => {
-    for (let i = 0; i < ScribeCanvas.overlayGroupsRenderIndices.length; i++) {
-      const n = ScribeCanvas.overlayGroupsRenderIndices[i];
+    for (let i = 0; i < ScribeViewer.overlayGroupsRenderIndices.length; i++) {
+      const n = ScribeViewer.overlayGroupsRenderIndices[i];
       if (Math.abs(n - stateViewer.cp.n) > 1 || !outsideViewOnly) {
-        ScribeCanvas.#overlayGroups[n].destroyChildren();
-        ScribeCanvas.overlayGroupsRenderIndices.splice(i, 1);
+        ScribeViewer.#overlayGroups[n].destroyChildren();
+        ScribeViewer.overlayGroupsRenderIndices.splice(i, 1);
         i--;
       }
     }
@@ -1274,11 +1276,11 @@ export class ScribeCanvas {
    * @param {boolean} [outsideViewOnly=true] - If `true`, only destroy objects outside the current view.
    */
   static destroyText = (outsideViewOnly = true) => {
-    for (let i = 0; i < ScribeCanvas.textGroupsRenderIndices.length; i++) {
-      const n = ScribeCanvas.textGroupsRenderIndices[i];
+    for (let i = 0; i < ScribeViewer.textGroupsRenderIndices.length; i++) {
+      const n = ScribeViewer.textGroupsRenderIndices[i];
       if (Math.abs(n - stateViewer.cp.n) > 1 || !outsideViewOnly) {
-        ScribeCanvas.#textGroups[n].destroyChildren();
-        ScribeCanvas.textGroupsRenderIndices.splice(i, 1);
+        ScribeViewer.#textGroups[n].destroyChildren();
+        ScribeViewer.textGroupsRenderIndices.splice(i, 1);
         i--;
       }
     }
@@ -1299,29 +1301,29 @@ export class ScribeCanvas {
 
     const focusWordElem = selection.focusNode?.nodeType === Node.ELEMENT_NODE ? selection.focusNode : selection.focusNode?.parentNode;
 
-    if (!focusWordElem || !ScribeCanvas._wordHTMLArr.includes(focusWordElem)) return;
+    if (!focusWordElem || !ScribeViewer._wordHTMLArr.includes(focusWordElem)) return;
 
-    ScribeCanvas.HTMLOverlayBackstopElem.style.display = '';
+    ScribeViewer.HTMLOverlayBackstopElem.style.display = '';
 
-    ScribeCanvas.elem.insertBefore(ScribeCanvas.HTMLOverlayBackstopElem, focusWordElem);
+    ScribeViewer.elem.insertBefore(ScribeViewer.HTMLOverlayBackstopElem, focusWordElem);
 
-    ScribeCanvas._prevRange = range.cloneRange();
+    ScribeViewer._prevRange = range.cloneRange();
   };
 }
 
 document.addEventListener('mouseup', () => {
-  if (ScribeCanvas.enableHTMLOverlay) {
-    ScribeCanvas.HTMLOverlayBackstopElem.style.display = 'none';
+  if (ScribeViewer.enableHTMLOverlay) {
+    ScribeViewer.HTMLOverlayBackstopElem.style.display = 'none';
   }
 });
 document.addEventListener('touchend', () => {
-  if (ScribeCanvas.enableHTMLOverlay) {
-    ScribeCanvas.HTMLOverlayBackstopElem.style.display = 'none';
+  if (ScribeViewer.enableHTMLOverlay) {
+    ScribeViewer.HTMLOverlayBackstopElem.style.display = 'none';
   }
 });
 
-document.addEventListener('selectionchange', ScribeCanvas._onSelection);
-document.addEventListener('mousedown', ScribeCanvas._onSelection);
+document.addEventListener('selectionchange', ScribeViewer._onSelection);
+document.addEventListener('mousedown', ScribeViewer._onSelection);
 
 function getElementIdsInRange(range) {
   const elementIds = [];
@@ -1362,12 +1364,12 @@ document.addEventListener('copy', (e) => {
 
   if (ids.length === 0) return;
 
-  ScribeCanvas.textGroupsRenderIndices.sort((a, b) => a - b);
+  ScribeViewer.textGroupsRenderIndices.sort((a, b) => a - b);
 
   let text = '';
-  for (let i = 0; i < ScribeCanvas.textGroupsRenderIndices.length; i++) {
+  for (let i = 0; i < ScribeViewer.textGroupsRenderIndices.length; i++) {
     if (i > 0) text += '\n\n';
-    const n = ScribeCanvas.textGroupsRenderIndices[i];
+    const n = ScribeViewer.textGroupsRenderIndices[i];
     text += scribe.utils.writeText([scribe.data.ocr.active[n]], 0, 0, false, false, ids);
   }
 
@@ -1381,7 +1383,7 @@ document.addEventListener('copy', (e) => {
  * Changes color and opacity of words based on the current display mode.
  */
 function setWordColorOpacity() {
-  ScribeCanvas.getKonvaWords().forEach((obj) => {
+  ScribeViewer.getKonvaWords().forEach((obj) => {
     // const { opacity, fill } = getWordFillOpacityGUI(obj.word);
 
     const { fill, opacity } = scribe.utils.ocr.getWordFillOpacity(obj.word, scribe.opt.displayMode,
@@ -1438,7 +1440,7 @@ async function compareGroundTruth() {
 const addBlockOutline = (n, box, angleAdj, label) => {
   const height = box.bottom - box.top;
 
-  const group = ScribeCanvas.getTextGroup(n);
+  const group = ScribeViewer.getTextGroup(n);
 
   const blockRect = new Konva.Rect({
     x: box.left + angleAdj.x,
@@ -1473,15 +1475,15 @@ const addBlockOutline = (n, box, angleAdj, label) => {
  *
  * @param {OcrPage} page
  */
-export function renderCanvasWords(page) {
-  const group = ScribeCanvas.getTextGroup(page.n);
+function renderCanvasWords(page) {
+  const group = ScribeViewer.getTextGroup(page.n);
 
   const angle = scribe.data.pageMetrics[page.n].angle || 0;
   const textRotation = scribe.opt.autoRotate ? 0 : angle;
 
   group.rotation(textRotation);
 
-  if (!ScribeCanvas.textGroupsRenderIndices.includes(page.n)) ScribeCanvas.textGroupsRenderIndices.push(page.n);
+  if (!ScribeViewer.textGroupsRenderIndices.includes(page.n)) ScribeViewer.textGroupsRenderIndices.push(page.n);
 
   const matchIdArr = stateViewer.searchMode ? scribe.utils.ocr.getMatchingWordIds(search.search, scribe.data.ocr.active[page.n]) : [];
 
@@ -1580,8 +1582,8 @@ const checkTrackPad = (event) => {
  * Handles the wheel event to scroll the layer vertically.
  * @param {WheelEvent} event - The wheel event from the user's mouse.
  */
-export const handleWheel = (event) => {
-  ScribeCanvas.deleteHTMLOverlay();
+const handleWheel = (event) => {
+  ScribeViewer.deleteHTMLOverlay();
   event.preventDefault();
   event.stopPropagation();
 
@@ -1606,32 +1608,32 @@ export const handleWheel = (event) => {
     if (scaleBy > 1.1) scaleBy = 1.1;
     if (scaleBy < 0.9) scaleBy = 0.9;
 
-    ScribeCanvas._zoomStage(scaleBy, ScribeCanvas.stage.getPointerPosition());
-    ScribeCanvas.destroyControls();
+    ScribeViewer._zoomStage(scaleBy, ScribeViewer.stage.getPointerPosition());
+    ScribeViewer.destroyControls();
   } else if (event.shiftKey) { // Scroll horizontally
-    ScribeCanvas.destroyControls();
+    ScribeViewer.destroyControls();
     const deltaX = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX * -1 : event.deltaY * -1;
-    ScribeCanvas.panStage({ deltaX });
+    ScribeViewer.panStage({ deltaX });
   } else { // Scroll vertically
-    ScribeCanvas.destroyControls();
-    ScribeCanvas.panStage({ deltaY: event.deltaY * -1, deltaX: event.deltaX * -1 });
+    ScribeViewer.destroyControls();
+    ScribeViewer.panStage({ deltaY: event.deltaY * -1, deltaX: event.deltaX * -1 });
   }
-  if (ScribeCanvas.enableHTMLOverlay) ScribeCanvas.renderHTMLOverlayAfterDelay();
+  if (ScribeViewer.enableHTMLOverlay) ScribeViewer.renderHTMLOverlayAfterDelay();
 };
 
 // Event listeners for mouse interactions.
 // These are added to the document because adding only to the canvas does not work when overlay text is clicked.
 // To avoid unintended interactions, the event listeners are only triggered when the target is within the canvas.
 document.addEventListener('wheel', (event) => {
-  if (event.target instanceof Node && ScribeCanvas.elem.contains(event.target) && scribe.data.pageMetrics.length > 0) {
+  if (event.target instanceof Node && ScribeViewer.elem.contains(event.target) && scribe.data.pageMetrics.length > 0) {
     handleWheel(event);
   }
 }, { passive: false });
 
 document.addEventListener('mousedown', (event) => {
-  if (event.target instanceof Node && ScribeCanvas.elem.contains(event.target) && scribe.data.pageMetrics.length > 0) {
+  if (event.target instanceof Node && ScribeViewer.elem.contains(event.target) && scribe.data.pageMetrics.length > 0) {
     if (event.button === 1) { // Middle mouse button
-      ScribeCanvas.startDrag(event);
+      ScribeViewer.startDrag(event);
     }
   }
 });

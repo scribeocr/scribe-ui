@@ -1,9 +1,9 @@
 import scribe from '../scribe.js/scribe.js';
 // eslint-disable-next-line import/no-cycle
-import { ScribeCanvas } from './viewerCanvas.js';
+import { ScribeViewer } from '../viewer.js';
 
 export function deleteSelectedWord() {
-  const selectedObjects = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedObjects = ScribeViewer.CanvasSelection.getKonvaWords();
   const selectedN = selectedObjects.length;
 
   /** @type {Object<string, Array<string>>} */
@@ -20,12 +20,12 @@ export function deleteSelectedWord() {
     scribe.utils.ocr.deletePageWords(scribe.data.ocr.active[n], ids);
   }
 
-  ScribeCanvas.destroyControls();
+  ScribeViewer.destroyControls();
 
-  ScribeCanvas.layerText.batchDraw();
+  ScribeViewer.layerText.batchDraw();
 
   // Re-render the page if the user has selected the option to outline lines to update the line boxes.
-  if (ScribeCanvas.opt.outlineLines) ScribeCanvas.displayPage(ScribeCanvas.state.cp.n);
+  if (ScribeViewer.opt.outlineLines) ScribeViewer.displayPage(ScribeViewer.state.cp.n);
 }
 
 /**
@@ -36,13 +36,13 @@ export function deleteSelectedWord() {
  */
 export function modifySelectedWordBbox(side, amount) {
   // const words = ScribeCanvas.getKonvaWords();
-  const selectedWords = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedWords = ScribeViewer.CanvasSelection.getKonvaWords();
   if (selectedWords.length !== 1) return;
   const selectedWord = selectedWords[0];
 
   selectedWord.word.bbox[side] += amount;
   if (side === 'left') selectedWord.x(selectedWord.x() + amount);
-  ScribeCanvas.KonvaIText.updateWordCanvas(selectedWord);
+  ScribeViewer.KonvaIText.updateWordCanvas(selectedWord);
 }
 
 /**
@@ -50,10 +50,10 @@ export function modifySelectedWordBbox(side, amount) {
  * @param {('normal'|'italic'|'bold')} style
  */
 export async function modifySelectedWordStyle(style) {
-  const selectedObjects = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedObjects = ScribeViewer.CanvasSelection.getKonvaWords();
   if (!selectedObjects || selectedObjects.length === 0) return;
 
-  if (ScribeCanvas.KonvaIText.inputRemove) ScribeCanvas.KonvaIText.inputRemove();
+  if (ScribeViewer.KonvaIText.inputRemove) ScribeViewer.KonvaIText.inputRemove();
 
   // If first word style already matches target style, disable the style.
   const enable = selectedObjects[0].word.style !== style;
@@ -76,11 +76,11 @@ export async function modifySelectedWordStyle(style) {
 
     wordI.fontFamilyLookup = fontI.family;
 
-    await ScribeCanvas.KonvaIText.updateWordCanvas(wordI);
+    await ScribeViewer.KonvaIText.updateWordCanvas(wordI);
   }
 
-  ScribeCanvas.layerText.batchDraw();
-  ScribeCanvas.KonvaOcrWord.updateUI();
+  ScribeViewer.layerText.batchDraw();
+  ScribeViewer.KonvaOcrWord.updateUI();
 }
 
 /**
@@ -88,7 +88,7 @@ export async function modifySelectedWordStyle(style) {
  * @param {string|number} fontSizeStr - String containing (1) 'plus', (2) 'minus', or (3) a numeric size.
  */
 export async function modifySelectedWordFontSize(fontSizeStr) {
-  const selectedObjects = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedObjects = ScribeViewer.CanvasSelection.getKonvaWords();
   if (!selectedObjects || selectedObjects.length === 0) return;
 
   let fontSize;
@@ -115,14 +115,14 @@ export async function modifySelectedWordFontSize(fontSizeStr) {
 
     wordI.fontSize = fontSize;
 
-    await ScribeCanvas.KonvaIText.updateWordCanvas(wordI);
+    await ScribeViewer.KonvaIText.updateWordCanvas(wordI);
   }
-  ScribeCanvas.layerText.batchDraw();
-  ScribeCanvas.KonvaOcrWord.updateUI();
+  ScribeViewer.layerText.batchDraw();
+  ScribeViewer.KonvaOcrWord.updateUI();
 }
 
 export async function modifySelectedWordFontFamily(fontName) {
-  const selectedObjects = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedObjects = ScribeViewer.CanvasSelection.getKonvaWords();
   if (!selectedObjects) return;
 
   const selectedN = selectedObjects.length;
@@ -144,9 +144,9 @@ export async function modifySelectedWordFontFamily(fontName) {
 
     wordI.fontFamilyLookup = fontI.family;
 
-    await ScribeCanvas.KonvaIText.updateWordCanvas(wordI);
+    await ScribeViewer.KonvaIText.updateWordCanvas(wordI);
   }
-  ScribeCanvas.layerText.batchDraw();
+  ScribeViewer.layerText.batchDraw();
 }
 
 /**
@@ -154,7 +154,7 @@ export async function modifySelectedWordFontFamily(fontName) {
  * @param {boolean} enable
  */
 export function modifySelectedWordSuper(enable) {
-  const selectedObjects = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedObjects = ScribeViewer.CanvasSelection.getKonvaWords();
   if (!selectedObjects || selectedObjects.length === 0) return;
   const selectedN = selectedObjects.length;
   for (let i = 0; i < selectedN; i++) {
@@ -163,7 +163,7 @@ export function modifySelectedWordSuper(enable) {
     wordI.word.sup = enable;
   }
 
-  ScribeCanvas.displayPage(ScribeCanvas.state.cp.n);
+  ScribeViewer.displayPage(ScribeViewer.state.cp.n);
 }
 
 /**
@@ -171,14 +171,14 @@ export function modifySelectedWordSuper(enable) {
  * @param {boolean} enable
  */
 export async function modifySelectedWordSmallCaps(enable) {
-  const selectedObjects = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedObjects = ScribeViewer.CanvasSelection.getKonvaWords();
   if (!selectedObjects || selectedObjects.length === 0) return;
   const selectedN = selectedObjects.length;
 
   for (let i = 0; i < selectedN; i++) {
     const wordI = selectedObjects[i];
     wordI.word.smallCaps = enable;
-    await ScribeCanvas.KonvaIText.updateWordCanvas(wordI);
+    await ScribeViewer.KonvaIText.updateWordCanvas(wordI);
   }
-  ScribeCanvas.layerText.batchDraw();
+  ScribeViewer.layerText.batchDraw();
 }

@@ -16,23 +16,23 @@ export class KonvaIText extends Konva.Shape {
   static smartQuotes = false;
 
   /**
-     * The `KonvaIText` class is a Konva shape that displays text, which is interactive and can be edited.
-     * While it uses an `OcrWord` object for input information, it is not directly tied to OCR, and can be used for any text with a dummy `OcrWord`.
-     * Any logic specific to OCR should be handled in the `OcrWord` object.
-     * @param {Object} options
-     * @param {number} options.x
-     * @param {number} options.yActual
-     * @param {InstanceType<typeof scribe.utils.ocr.OcrWord>} options.word
-     * @param {number} [options.rotation=0]
-     * @param {boolean} [options.outline=false]
-     * @param {boolean} [options.selected=false]
-     * @param {boolean} [options.fillBox=false]
-     * @param {number} [options.opacity=1]
-     * @param {string} [options.fill='black']
-     * @param {boolean} [options.dynamicWidth=false] - If `true`, the width of the text box will be calculated dynamically based on the text content, rather than using the bounding box.
-     *    This is used for dummy text boxes that are not tied to OCR, however should be `false` for OCR text boxes.
-     * @param {Function} options.editTextCallback
-     */
+   * The `KonvaIText` class is a Konva shape that displays text, which is interactive and can be edited.
+   * While it uses an `OcrWord` object for input information, it is not directly tied to OCR, and can be used for any text with a dummy `OcrWord`.
+   * Any logic specific to OCR should be handled in the `OcrWord` object.
+   * @param {Object} options
+   * @param {number} options.x
+   * @param {number} options.yActual
+   * @param {InstanceType<typeof scribe.utils.ocr.OcrWord>} options.word
+   * @param {number} [options.rotation=0]
+   * @param {boolean} [options.outline=false]
+   * @param {boolean} [options.selected=false]
+   * @param {boolean} [options.fillBox=false]
+   * @param {number} [options.opacity=1]
+   * @param {string} [options.fill='black']
+   * @param {boolean} [options.dynamicWidth=false] - If `true`, the width of the text box will be calculated dynamically based on the text content, rather than using the bounding box.
+   *    This is used for dummy text boxes that are not tied to OCR, however should be `false` for OCR text boxes.
+   * @param {Function} options.editTextCallback
+   */
   constructor({
     x, yActual, word, rotation = 0,
     outline = false, selected = false, fillBox = false, opacity = 1, fill = 'black', dynamicWidth = false, editTextCallback,
@@ -188,11 +188,11 @@ export class KonvaIText extends Konva.Shape {
   }
 
   /**
-     * Get the index of the letter that the cursor is closest to.
-     * This function should be used when selecting a letter to edit;
-     * when actively editing, `getInputCursorIndex` should be used instead.
-     * @param {KonvaIText} itext
-     */
+   * Get the index of the letter that the cursor is closest to.
+   * This function should be used when selecting a letter to edit;
+   * when actively editing, `getInputCursorIndex` should be used instead.
+   * @param {KonvaIText} itext
+   */
   static getCursorIndex = (itext) => {
     const layer = itext.getLayer();
     if (!layer) throw new Error('Object must be added to a layer before drawing text');
@@ -233,11 +233,11 @@ export class KonvaIText extends Konva.Shape {
   };
 
   /**
- * Update word textbox on canvas following changes.
- * Whenever a user edits a word in any way (including content and font/style),
- * the position and character spacing need to be re-calculated so they still overlay with the background image.
- * @param {KonvaIText} wordI
- */
+   * Update word textbox on canvas following changes.
+   * Whenever a user edits a word in any way (including content and font/style),
+   * the position and character spacing need to be re-calculated so they still overlay with the background image.
+   * @param {KonvaIText} wordI
+   */
   static updateWordCanvas = (wordI) => {
     // Re-calculate left position given potentially new left bearing
     const {
@@ -366,11 +366,11 @@ export class KonvaIText extends Konva.Shape {
   };
 
   /**
-     * Position and show the input for editing.
-     * @param {KonvaIText} itext
-     * @param {?number} cursorIndex - Index to position the cursor at. If `null`, position is determined by mouse location.
-     *    If `-1`, the cursor is positioned at the end of the text.
-     */
+   * Position and show the input for editing.
+   * @param {KonvaIText} itext
+   * @param {?number} cursorIndex - Index to position the cursor at. If `null`, position is determined by mouse location.
+   *    If `-1`, the cursor is positioned at the end of the text.
+   */
   static addTextInput = (itext, cursorIndex = null) => {
     let letterIndex = cursorIndex ?? KonvaIText.getCursorIndex(itext);
     if (letterIndex < 0) letterIndex = itext.charArr.length;
@@ -455,9 +455,9 @@ export class KonvaIText extends Konva.Shape {
       let index = sel.anchorOffset;
 
       /**
-         *
-         * @param {Node} node
-         */
+       *
+       * @param {Node} node
+       */
       const getPrevTextNode = (node) => {
         if (node.previousSibling && node.previousSibling.nodeType === 3) return node.previousSibling;
 
@@ -528,17 +528,17 @@ export class KonvaOcrWord extends KonvaIText {
   static _controlArr = [];
 
   /**
-     *
-     * @param {Object} options
-     * @param {number} options.visualLeft
-     * @param {number} options.yActual
-     * @param {number} options.topBaseline
-     * @param {OcrWord} options.word
-     * @param {number} options.rotation
-     * @param {boolean} options.outline - Draw black outline around text.
-     * @param {boolean} options.fillBox
-     * @param {boolean} options.listening
-     */
+   *
+   * @param {Object} options
+   * @param {number} options.visualLeft
+   * @param {number} options.yActual
+   * @param {number} options.topBaseline
+   * @param {OcrWord} options.word
+   * @param {number} options.rotation
+   * @param {boolean} options.outline - Draw black outline around text.
+   * @param {boolean} options.fillBox
+   * @param {boolean} options.listening
+   */
   constructor({
     visualLeft, yActual, topBaseline, word, rotation,
     outline, fillBox, listening,
@@ -592,15 +592,15 @@ export class KonvaOcrWord extends KonvaIText {
   }
 
   /**
-     * Update the UI to reflect the properties of selected words.
-     * This should be called when any word is selected, after adding them to the selection.
-     */
+   * Update the UI to reflect the properties of selected words.
+   * This should be called when any word is selected, after adding them to the selection.
+   */
   static updateUI = () => {};
 
   /**
-     * Add controls for editing left/right bounds of word.
-     * @param {KonvaOcrWord} itext
-     */
+   * Add controls for editing left/right bounds of word.
+   * @param {KonvaOcrWord} itext
+   */
   static addControls = (itext) => {
     const parent = itext.getParent();
     if (!parent) throw new Error('Object must be added to a layer before drawing text');

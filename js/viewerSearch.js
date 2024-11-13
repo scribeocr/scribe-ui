@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-cycle
-import { ScribeCanvas } from './viewerCanvas.js';
+import { ScribeViewer } from '../viewer.js';
 import scribe from '../scribe.js/scribe.js';
 
 export class search {
@@ -52,9 +52,9 @@ function findAllMatches(text) {
 // Highlight words that include substring in the current page
 function highlightcp(text) {
   if (!text) return;
-  const matchIdArr = scribe.utils.ocr.getMatchingWordIds(text, scribe.data.ocr.active[ScribeCanvas.state.cp.n]);
+  const matchIdArr = scribe.utils.ocr.getMatchingWordIds(text, scribe.data.ocr.active[ScribeViewer.state.cp.n]);
 
-  ScribeCanvas.getKonvaWords().forEach((wordObj) => {
+  ScribeViewer.getKonvaWords().forEach((wordObj) => {
     if (matchIdArr.includes(wordObj.word.id)) {
       wordObj.fillBox = true;
     } else {
@@ -62,23 +62,23 @@ function highlightcp(text) {
     }
   });
 
-  ScribeCanvas.layerText.batchDraw();
+  ScribeViewer.layerText.batchDraw();
 }
 
 // Updates data used for "Find" feature on current page
 // Should be called after any edits are made, before moving to a different page
 function updateFindStats() {
-  if (!scribe.data.ocr.active[ScribeCanvas.state.cp.n]) {
-    search.text[ScribeCanvas.state.cp.n] = '';
+  if (!scribe.data.ocr.active[ScribeViewer.state.cp.n]) {
+    search.text[ScribeViewer.state.cp.n] = '';
     return;
   }
 
   // Re-extract text from XML
-  search.text[ScribeCanvas.state.cp.n] = scribe.utils.ocr.getPageText(scribe.data.ocr.active[ScribeCanvas.state.cp.n]);
+  search.text[ScribeViewer.state.cp.n] = scribe.utils.ocr.getPageText(scribe.data.ocr.active[ScribeViewer.state.cp.n]);
 
   if (search.search) {
     // Count matches in current page
-    search.matches[ScribeCanvas.state.cp.n] = scribe.utils.countSubstringOccurrences(search.text[ScribeCanvas.state.cp.n], search.search);
+    search.matches[ScribeViewer.state.cp.n] = scribe.utils.countSubstringOccurrences(search.text[ScribeViewer.state.cp.n], search.search);
     // Calculate total number of matches
     search.total = search.matches.reduce((partialSum, a) => partialSum + a, 0);
   }

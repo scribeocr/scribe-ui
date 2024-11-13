@@ -1,8 +1,8 @@
 /* eslint-disable import/no-cycle */
 import scribe from '../scribe.js/scribe.js';
 import {
-  ScribeCanvas,
-} from './viewerCanvas.js';
+  ScribeViewer,
+} from '../viewer.js';
 import { Konva } from './konva/_FullInternals.js';
 import {
   addLayoutBox,
@@ -109,7 +109,7 @@ async function recognizeArea(n, box, wordMode = false) {
 
   scribe.combineOCRPage(pageNew, scribe.data.ocr.active[n], scribe.data.pageMetrics[n]);
 
-  if (ScribeCanvas.textGroupsRenderIndices.includes(n)) ScribeCanvas.displayPage(ScribeCanvas.state.cp.n);
+  if (ScribeViewer.textGroupsRenderIndices.includes(n)) ScribeViewer.displayPage(ScribeViewer.state.cp.n);
 }
 
 /**
@@ -191,7 +191,7 @@ async function addWordManual(n, box) {
 
   const visualBaseline = linebox.bottom + baseline[1] + angleAdjLine.y + angleAdjWord.y;
 
-  const outlineWord = ScribeCanvas.opt.outlineWords || scribe.opt.displayMode === 'eval' && wordObj.conf > scribe.opt.confThreshHigh && !wordObj.matchTruth;
+  const outlineWord = ScribeViewer.opt.outlineWords || scribe.opt.displayMode === 'eval' && wordObj.conf > scribe.opt.confThreshHigh && !wordObj.matchTruth;
 
   const wordCanvas = new KonvaOcrWord({
     visualLeft: box.left,
@@ -201,13 +201,13 @@ async function addWordManual(n, box) {
     word: wordObj,
     outline: outlineWord,
     fillBox: false,
-    listening: !ScribeCanvas.state.layoutMode,
+    listening: !ScribeViewer.state.layoutMode,
   });
 
-  const group = ScribeCanvas.getTextGroup(n);
+  const group = ScribeViewer.getTextGroup(n);
   group.add(wordCanvas);
 
-  ScribeCanvas.layerText.batchDraw();
+  ScribeViewer.layerText.batchDraw();
 }
 
 const createContextMenuHTML = () => {
@@ -295,7 +295,7 @@ const createContextMenuHTML = () => {
 const splitWordClick = () => {
   hideContextMenu();
 
-  const konvaWord = ScribeCanvas.contextMenuWord;
+  const konvaWord = ScribeViewer.contextMenuWord;
 
   if (!konvaWord) return;
 
@@ -306,13 +306,13 @@ const splitWordClick = () => {
 
   konvaWord.word.line.words.splice(wordIndex, 1, wordA, wordB);
 
-  ScribeCanvas.displayPage(ScribeCanvas.state.cp.n);
+  ScribeViewer.displayPage(ScribeViewer.state.cp.n);
 };
 
 const mergeWordsClick = () => {
   hideContextMenu();
 
-  const selectedKonvaWords = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedKonvaWords = ScribeViewer.CanvasSelection.getKonvaWords();
   const selectedWords = selectedKonvaWords.map((x) => x.word);
   if (selectedKonvaWords.length < 2 || !scribe.utils.checkOcrWordsAdjacent(selectedWords)) return;
   const newWord = scribe.utils.mergeOcrWords(selectedKonvaWords.map((x) => x.word));
@@ -322,37 +322,37 @@ const mergeWordsClick = () => {
   const firstIndex = lineWords.findIndex((x) => x.id === selectedKonvaWords[0].word.id);
   lineWords.splice(firstIndex, selectedKonvaWords.length, newWord);
 
-  ScribeCanvas.displayPage(ScribeCanvas.state.cp.n);
+  ScribeViewer.displayPage(ScribeViewer.state.cp.n);
 };
 
 const deleteLayoutDataTableClick = () => {
   hideContextMenu();
-  const selectedColumns = ScribeCanvas.CanvasSelection.getKonvaDataColumns();
+  const selectedColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
   if (selectedColumns.length === 0) return;
 
-  scribe.data.layoutDataTables.deleteLayoutDataTable(selectedColumns[0].konvaTable.layoutDataTable, ScribeCanvas.state.cp.n);
+  scribe.data.layoutDataTables.deleteLayoutDataTable(selectedColumns[0].konvaTable.layoutDataTable, ScribeViewer.state.cp.n);
 
   selectedColumns[0].konvaTable.destroy();
-  ScribeCanvas.destroyControls();
-  ScribeCanvas.layerOverlay.batchDraw();
+  ScribeViewer.destroyControls();
+  ScribeViewer.layerOverlay.batchDraw();
 };
 
 const deleteLayoutRegionClick = () => {
   hideContextMenu();
-  const selectedRegions = ScribeCanvas.CanvasSelection.getKonvaRegions();
+  const selectedRegions = ScribeViewer.CanvasSelection.getKonvaRegions();
   if (selectedRegions.length === 0) return;
 
   selectedRegions.forEach((region) => {
-    scribe.data.layoutRegions.deleteLayoutRegion(region.layoutBox, ScribeCanvas.state.cp.n);
+    scribe.data.layoutRegions.deleteLayoutRegion(region.layoutBox, ScribeViewer.state.cp.n);
     region.destroy();
   });
-  ScribeCanvas.destroyControls();
-  ScribeCanvas.layerOverlay.batchDraw();
+  ScribeViewer.destroyControls();
+  ScribeViewer.layerOverlay.batchDraw();
 };
 
 const copyTableContentsClick = () => {
   hideContextMenu();
-  const selectedColumns = ScribeCanvas.CanvasSelection.getKonvaDataColumns();
+  const selectedColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
   if (selectedColumns.length === 0) return;
 
   const table = document.createElement('table');
@@ -379,36 +379,36 @@ const copyTableContentsClick = () => {
 
 const mergeDataColumnsClick = () => {
   hideContextMenu();
-  mergeDataColumns(ScribeCanvas.CanvasSelection.getKonvaDataColumns());
-  ScribeCanvas.destroyControls();
+  mergeDataColumns(ScribeViewer.CanvasSelection.getKonvaDataColumns());
+  ScribeViewer.destroyControls();
 };
 
 const mergeDataTablesClick = () => {
   hideContextMenu();
-  const dataTableArr = ScribeCanvas.CanvasSelection.getDataTables();
+  const dataTableArr = ScribeViewer.CanvasSelection.getDataTables();
   mergeDataTables(dataTableArr);
-  ScribeCanvas.destroyControls();
+  ScribeViewer.destroyControls();
 };
 
 const splitDataColumnClick = () => {
   hideContextMenu();
   // const ptr = ScribeCanvas.layerOverlay.getRelativePointerPosition();
   // if (!ptr) return;
-  const selectedColumns = ScribeCanvas.CanvasSelection.getKonvaDataColumns();
-  splitDataColumn(selectedColumns[0], ScribeCanvas.contextMenuPointer.x);
-  ScribeCanvas.destroyControls();
+  const selectedColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
+  splitDataColumn(selectedColumns[0], ScribeViewer.contextMenuPointer.x);
+  ScribeViewer.destroyControls();
 };
 
 const splitDataTableClick = () => {
   hideContextMenu();
-  splitDataTable(ScribeCanvas.CanvasSelection.getKonvaDataColumns());
-  ScribeCanvas.destroyControls();
+  splitDataTable(ScribeViewer.CanvasSelection.getKonvaDataColumns());
+  ScribeViewer.destroyControls();
 };
 
 const deleteWordsClick = () => {
   hideContextMenu();
   deleteSelectedWord();
-  ScribeCanvas.destroyControls();
+  ScribeViewer.destroyControls();
 };
 
 const menuNode = createContextMenuHTML();
@@ -467,27 +467,27 @@ style.textContent = `
 document.head.appendChild(style);
 
 export const contextMenuFunc = (event) => {
-  const pointer = ScribeCanvas.stage.getPointerPosition();
-  const pointerRelative = ScribeCanvas.layerOverlay.getRelativePointerPosition();
+  const pointer = ScribeViewer.stage.getPointerPosition();
+  const pointerRelative = ScribeViewer.layerOverlay.getRelativePointerPosition();
 
   if (!pointer || !pointerRelative) return;
 
-  const selectedKonvaWords = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedKonvaWords = ScribeViewer.CanvasSelection.getKonvaWords();
   const selectedWords = selectedKonvaWords.map((x) => x.word);
-  const selectedColumns = ScribeCanvas.CanvasSelection.getKonvaDataColumns();
-  const selectedRegions = ScribeCanvas.CanvasSelection.getKonvaRegions();
+  const selectedColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
+  const selectedRegions = ScribeViewer.CanvasSelection.getKonvaRegions();
 
-  ScribeCanvas.contextMenuPointer = pointerRelative;
+  ScribeViewer.contextMenuPointer = pointerRelative;
 
   let enableSplitWord = false;
   let enableMergeWords = false;
   let enableDeleteWords = false;
-  if (!ScribeCanvas.state.layoutMode && selectedKonvaWords.length > 0) enableDeleteWords = true;
-  if (!ScribeCanvas.state.layoutMode && event.target instanceof KonvaOcrWord) {
+  if (!ScribeViewer.state.layoutMode && selectedKonvaWords.length > 0) enableDeleteWords = true;
+  if (!ScribeViewer.state.layoutMode && event.target instanceof KonvaOcrWord) {
     if (selectedKonvaWords.length < 2) {
       const cursorIndex = KonvaOcrWord.getCursorIndex(event.target);
       if (cursorIndex > 0 && cursorIndex < event.target.word.text.length) {
-        ScribeCanvas.contextMenuWord = event.target;
+        ScribeViewer.contextMenuWord = event.target;
         enableSplitWord = true;
       }
     } else {
@@ -496,7 +496,7 @@ export const contextMenuFunc = (event) => {
     }
   }
 
-  const selectedTables = ScribeCanvas.CanvasSelection.getDataTables();
+  const selectedTables = ScribeViewer.CanvasSelection.getDataTables();
 
   let enableMergeTables = false;
   let enableMergeColumns = false;
@@ -563,7 +563,7 @@ export const contextMenuFunc = (event) => {
   event.evt.preventDefault();
 
   menuNode.style.display = 'initial';
-  const containerRect = ScribeCanvas.stage.container().getBoundingClientRect();
+  const containerRect = ScribeViewer.stage.container().getBoundingClientRect();
   menuNode.style.top = `${containerRect.top + pointer.y + 4}px`;
   menuNode.style.left = `${containerRect.left + pointer.x + 4}px`;
 };
@@ -577,12 +577,12 @@ export const contextMenuFunc = (event) => {
  * @param {number} box.y
  */
 function selectWords(box) {
-  const shapes = ScribeCanvas.getKonvaWords();
+  const shapes = ScribeViewer.getKonvaWords();
 
   const newSelectedWords = shapes.filter((shape) => Konva.Util.haveIntersection(box, shape.getClientRect()));
-  ScribeCanvas.CanvasSelection.addWords(newSelectedWords);
+  ScribeViewer.CanvasSelection.addWords(newSelectedWords);
 
-  const selectedWords = ScribeCanvas.CanvasSelection.getKonvaWords();
+  const selectedWords = ScribeViewer.CanvasSelection.getKonvaWords();
 
   if (selectedWords.length > 1) {
     selectedWords.forEach((shape) => (shape.select()));
@@ -603,10 +603,10 @@ function selectWords(box) {
  */
 export function selectLayoutBoxesArea(box) {
   // const shapes = ScribeCanvas.getKonvaLayoutBoxes();
-  const shapes = [...ScribeCanvas.getKonvaDataColumns(), ...ScribeCanvas.getKonvaRegions()];
+  const shapes = [...ScribeViewer.getKonvaDataColumns(), ...ScribeViewer.getKonvaRegions()];
   const layoutBoxes = shapes.filter((shape) => Konva.Util.haveIntersection(box, shape.getClientRect()));
 
-  ScribeCanvas.CanvasSelection.selectLayoutBoxes(layoutBoxes);
+  ScribeViewer.CanvasSelection.selectLayoutBoxes(layoutBoxes);
 }
 
 export const mouseupFunc2 = (event) => {
@@ -616,12 +616,12 @@ export const mouseupFunc2 = (event) => {
   const activeElem = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   if (activeElem && navBarElem.contains(activeElem)) activeElem.blur();
 
-  ScribeCanvas.stopDragPinch(event);
+  ScribeViewer.stopDragPinch(event);
 
   // Exit early if the right mouse button was clicked to bring up a context menu.
   if (event.evt.button === 2) {
-    const selectedColumnIds = ScribeCanvas.CanvasSelection.getKonvaDataColumns().map((x) => x.layoutBox.id);
-    const selectedWordIds = ScribeCanvas.CanvasSelection.getKonvaWords().map((x) => x.word.id);
+    const selectedColumnIds = ScribeViewer.CanvasSelection.getKonvaDataColumns().map((x) => x.layoutBox.id);
+    const selectedWordIds = ScribeViewer.CanvasSelection.getKonvaWords().map((x) => x.word.id);
 
     // Right clicking on empty space should not clear the selection.
     if (!(event.target instanceof KonvaDataColumn || event.target instanceof KonvaOcrWord)) return;
@@ -639,49 +639,49 @@ export const mouseupFunc2 = (event) => {
 
   // Handle the case where no rectangle is drawn (i.e. a click event), or the rectangle is is extremely small.
   // Clicks are handled in the same function as rectangle selections as using separate events lead to issues when multiple events were triggered.
-  if (!ScribeCanvas.selectingRectangle.visible() || (ScribeCanvas.selectingRectangle.width() < 5 && ScribeCanvas.selectingRectangle.height() < 5)) {
-    const ptr = ScribeCanvas.stage.getPointerPosition();
+  if (!ScribeViewer.selectingRectangle.visible() || (ScribeViewer.selectingRectangle.width() < 5 && ScribeViewer.selectingRectangle.height() < 5)) {
+    const ptr = ScribeViewer.stage.getPointerPosition();
     if (!ptr) return;
     const box = {
       x: ptr.x, y: ptr.y, width: 1, height: 1,
     };
-    if (ScribeCanvas.mode === 'select' && !ScribeCanvas.state.layoutMode) {
-      ScribeCanvas.destroyControls(!event.evt.ctrlKey);
+    if (ScribeViewer.mode === 'select' && !ScribeViewer.state.layoutMode) {
+      ScribeViewer.destroyControls(!event.evt.ctrlKey);
       selectWords(box);
       KonvaOcrWord.updateUI();
-      ScribeCanvas.layerText.batchDraw();
-    } else if (ScribeCanvas.mode === 'select' && ScribeCanvas.state.layoutMode) {
-      ScribeCanvas.destroyControls(!event.evt.ctrlKey);
+      ScribeViewer.layerText.batchDraw();
+    } else if (ScribeViewer.mode === 'select' && ScribeViewer.state.layoutMode) {
+      ScribeViewer.destroyControls(!event.evt.ctrlKey);
       selectLayoutBoxesArea(box);
       KonvaLayout.updateUI();
-      ScribeCanvas.layerOverlay.batchDraw();
+      ScribeViewer.layerOverlay.batchDraw();
     }
     return;
   }
 
   // update visibility in timeout, so we can check it in click event
-  ScribeCanvas.selectingRectangle.visible(false);
+  ScribeViewer.selectingRectangle.visible(false);
 
-  if (ScribeCanvas.mode === 'select' && !ScribeCanvas.state.layoutMode) {
-    ScribeCanvas.destroyControls(!event.evt.ctrlKey);
-    const box = ScribeCanvas.selectingRectangle.getClientRect();
+  if (ScribeViewer.mode === 'select' && !ScribeViewer.state.layoutMode) {
+    ScribeViewer.destroyControls(!event.evt.ctrlKey);
+    const box = ScribeViewer.selectingRectangle.getClientRect();
     selectWords(box);
     KonvaOcrWord.updateUI();
-  } else if (ScribeCanvas.mode === 'select' && ScribeCanvas.state.layoutMode) {
-    ScribeCanvas.destroyControls(!event.evt.ctrlKey);
-    const box = ScribeCanvas.selectingRectangle.getClientRect();
+  } else if (ScribeViewer.mode === 'select' && ScribeViewer.state.layoutMode) {
+    ScribeViewer.destroyControls(!event.evt.ctrlKey);
+    const box = ScribeViewer.selectingRectangle.getClientRect();
     selectLayoutBoxesArea(box);
     KonvaLayout.updateUI();
-  } else if (['addWord', 'recognizeWord', 'recognizeArea', 'printCoords', 'addLayoutBoxOrder', 'addLayoutBoxExclude', 'addLayoutBoxDataTable'].includes(ScribeCanvas.mode)) {
-    const { n, box } = ScribeCanvas.calcSelectionImageCoords();
+  } else if (['addWord', 'recognizeWord', 'recognizeArea', 'printCoords', 'addLayoutBoxOrder', 'addLayoutBoxExclude', 'addLayoutBoxDataTable'].includes(ScribeViewer.mode)) {
+    const { n, box } = ScribeViewer.calcSelectionImageCoords();
 
-    if (ScribeCanvas.mode === 'addWord') {
+    if (ScribeViewer.mode === 'addWord') {
       addWordManual(n, box);
-    } else if (ScribeCanvas.mode === 'recognizeWord') {
+    } else if (ScribeViewer.mode === 'recognizeWord') {
       recognizeArea(n, box, true);
-    } else if (ScribeCanvas.mode === 'recognizeArea') {
+    } else if (ScribeViewer.mode === 'recognizeArea') {
       recognizeArea(n, box, false);
-    } else if (ScribeCanvas.mode === 'printCoords') {
+    } else if (ScribeViewer.mode === 'printCoords') {
       const debugCoords = {
         left: box.left,
         top: box.top,
@@ -691,11 +691,11 @@ export const mouseupFunc2 = (event) => {
         bottomInv: scribe.data.pageMetrics[n].dims.height - (box.top + box.height),
       };
       console.log(debugCoords);
-    } else if (ScribeCanvas.mode === 'addLayoutBoxOrder') {
+    } else if (ScribeViewer.mode === 'addLayoutBoxOrder') {
       addLayoutBox(n, box, 'order');
-    } else if (ScribeCanvas.mode === 'addLayoutBoxExclude') {
+    } else if (ScribeViewer.mode === 'addLayoutBoxExclude') {
       addLayoutBox(n, box, 'exclude');
-    } else if (ScribeCanvas.mode === 'addLayoutBoxDataTable') {
+    } else if (ScribeViewer.mode === 'addLayoutBoxDataTable') {
       addLayoutDataTable(n, box);
     }
   }

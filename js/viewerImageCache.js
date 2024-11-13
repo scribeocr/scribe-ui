@@ -1,6 +1,6 @@
 import scribe from '../scribe.js/scribe.js';
 /* eslint-disable import/no-cycle */
-import { ScribeCanvas } from './viewerCanvas.js';
+import { ScribeViewer } from '../viewer.js';
 import Konva from './konva/index.js';
 import { initBitmapWorker } from './bitmapWorkerMain.js';
 import { range } from '../scribe.js/js/utils/miscUtils.js';
@@ -121,7 +121,7 @@ export class ViewerImageCache {
       rotation = (scribe.data.pageMetrics[n].angle || 0);
     }
 
-    const pageOffsetY = ScribeCanvas.getPageStop(n) ?? 30;
+    const pageOffsetY = ScribeViewer.getPageStop(n) ?? 30;
 
     const y = pageOffsetY + pageDims.height * 0.5;
 
@@ -212,14 +212,14 @@ export class ViewerImageCache {
 
           if (Math.abs(konvaImage.rotation() - rotation) > 0.01) {
             konvaImage.rotation(rotation);
-            if (Math.abs(ScribeCanvas.state.cp.n - n) < 2) ScribeCanvas.layerBackground.batchDraw();
+            if (Math.abs(ScribeViewer.state.cp.n - n) < 2) ScribeViewer.layerBackground.batchDraw();
           }
         }
       }
       if (!rerender) return;
     }
 
-    if (ScribeCanvas.getPageStop(n) === null) return;
+    if (ScribeViewer.getPageStop(n) === null) return;
 
     if (ViewerImageCache.konvaImages[n]) {
       ViewerImageCache.konvaImages[n].then((konvaImage) => {
@@ -234,9 +234,9 @@ export class ViewerImageCache {
     });
 
     ViewerImageCache.konvaImages[n].then((konvaImage) => {
-      ScribeCanvas.layerBackground.add(konvaImage);
-      if (ScribeCanvas.placeholderRectArr[n]) ScribeCanvas.placeholderRectArr[n].hide();
-      if (Math.abs(ScribeCanvas.state.cp.n - n) < 2) ScribeCanvas.layerBackground.batchDraw();
+      ScribeViewer.layerBackground.add(konvaImage);
+      if (ScribeViewer.placeholderRectArr[n]) ScribeViewer.placeholderRectArr[n].hide();
+      if (Math.abs(ScribeViewer.state.cp.n - n) < 2) ScribeViewer.layerBackground.batchDraw();
     });
   };
 
@@ -306,7 +306,7 @@ export class ViewerImageCache {
     // Delete images that are sufficiently far away from the current page to save memory.
     for (let i = 0; i < scribe.data.image.pageCount; i++) {
       if (Math.abs(curr - i) > ViewerImageCache.cacheDeletePages) {
-        if (ScribeCanvas.placeholderRectArr[i]) ScribeCanvas.placeholderRectArr[i].show();
+        if (ScribeViewer.placeholderRectArr[i]) ScribeViewer.placeholderRectArr[i].show();
         ViewerImageCache.deleteKonvaImage(i);
       }
     }

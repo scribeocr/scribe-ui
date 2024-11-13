@@ -55,10 +55,10 @@ export async function initBitmapWorker() {
     }
 
     /**
-       * Wraps a function to be called via worker messages.
-       * @param {string} func The function name to call.
-       * @returns {Function} A function that returns a promise resolving to the worker's response.
-       */
+     * Wraps a function to be called via worker messages.
+     * @param {string} func The function name to call.
+     * @returns {Function} A function that returns a promise resolving to the worker's response.
+     */
     function wrap(func) {
       return function (...args) {
         return new Promise((innerResolve, innerReject) => {
