@@ -14,7 +14,7 @@ import {
   deleteSelectedWord, modifySelectedWordBbox, modifySelectedWordFontFamily, modifySelectedWordFontSize, modifySelectedWordSmallCaps, modifySelectedWordStyle,
   modifySelectedWordSuper,
 } from './js/viewerModifySelectedWords.js';
-import { getAllFileEntries } from './js/utils.js';
+import { getAllFileEntries } from './js/dragAndDrop.js';
 
 Konva.autoDrawEnabled = false;
 Konva.dragButtons = [0];
