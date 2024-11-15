@@ -297,7 +297,7 @@ export function handleKeyboardEvent(event) {
     ScribeViewer.layerText.batchDraw();
     event.preventDefault(); // Prevent the default action to avoid browser zoom
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -307,7 +307,7 @@ export function handleKeyboardEvent(event) {
     ScribeViewer.layerText.batchDraw();
     event.preventDefault(); // Prevent the default action to avoid browser zoom
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -333,7 +333,7 @@ export function handleKeyboardEvent(event) {
     }
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -350,7 +350,7 @@ export function handleKeyboardEvent(event) {
 
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -364,7 +364,7 @@ export function handleKeyboardEvent(event) {
     if (ScribeViewer.KonvaIText.input) ScribeViewer.KonvaIText.input.style.opacity = '0';
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
 
     const handleKeyUp = (keyupEvent) => {
       if (keyupEvent.key === 'Control' || keyupEvent.key === ' ') {
@@ -394,7 +394,7 @@ export function handleKeyboardEvent(event) {
     }
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -402,7 +402,7 @@ export function handleKeyboardEvent(event) {
     selectAboveWord();
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -410,7 +410,7 @@ export function handleKeyboardEvent(event) {
     selectBelowWord();
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -422,7 +422,7 @@ export function handleKeyboardEvent(event) {
     KonvaIText.addTextInput(selectedWord, pos);
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -430,7 +430,7 @@ export function handleKeyboardEvent(event) {
     modifySelectedWordStyle('italic');
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -438,7 +438,7 @@ export function handleKeyboardEvent(event) {
     modifySelectedWordStyle('bold');
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -446,7 +446,7 @@ export function handleKeyboardEvent(event) {
     deleteSelectedWord();
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -454,7 +454,7 @@ export function handleKeyboardEvent(event) {
     modifySelectedWordFontSize('plus');
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 
@@ -462,7 +462,7 @@ export function handleKeyboardEvent(event) {
     modifySelectedWordFontSize('minus');
     event.preventDefault();
     event.stopPropagation();
-    ScribeViewer.keyboardShortcutCallback(event);
+    ScribeViewer.interactionCallback(event);
     return;
   }
 

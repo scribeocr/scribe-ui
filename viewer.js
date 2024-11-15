@@ -14,6 +14,7 @@ import {
   deleteSelectedWord, modifySelectedWordBbox, modifySelectedWordFontFamily, modifySelectedWordFontSize, modifySelectedWordSmallCaps, modifySelectedWordStyle,
   modifySelectedWordSuper,
 } from './js/viewerModifySelectedWords.js';
+import { getAllFileEntries } from './js/utils.js';
 
 Konva.autoDrawEnabled = false;
 Konva.dragButtons = [0];
@@ -621,13 +622,13 @@ export class ScribeViewer {
   };
 
   /**
-   * Function called after keyboard shortcut is pressed.
+   * Function called after the canvas is interacted with, whether by a click or a keyboard event.
    * @param {*} event
    */
-  static keyboardShortcutCallback = (event) => {};
+  static interactionCallback = (event) => {};
 
   /**
-   * Function called after keyboard shortcut is pressed.
+   * Function called after controls are destroyed.
    * @param {boolean} deselect
    */
   static destroyControlsCallback = (deselect) => {};
@@ -1138,6 +1139,8 @@ export class ScribeViewer {
   static search = search;
 
   static layout = layout;
+
+  static getAllFileEntries = getAllFileEntries;
 
   static setWordColorOpacity = setWordColorOpacity;
 

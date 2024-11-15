@@ -612,9 +612,7 @@ export function selectLayoutBoxesArea(box) {
 export const mouseupFunc2 = (event) => {
   hideContextMenu();
 
-  const navBarElem = /** @type {HTMLDivElement} */(document.getElementById('navBar'));
-  const activeElem = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  if (activeElem && navBarElem.contains(activeElem)) activeElem.blur();
+  ScribeViewer.interactionCallback(event);
 
   ScribeViewer.stopDragPinch(event);
 
