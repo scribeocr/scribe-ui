@@ -345,8 +345,16 @@ export class KonvaIText extends Konva.Shape {
     }
 
     inputElem.style.letterSpacing = `${charSpacingHTML}px`;
-    inputElem.style.color = itext.fill();
-    inputElem.style.opacity = String(itext.opacity());
+    const opacity = itext.opacity();
+    // Text with opacity 0 is not selectable, so we make it transparent instead.
+    if (opacity === 0) {
+      inputElem.style.color = 'transparent';
+      inputElem.style.opacity = 1;
+    } else {
+      inputElem.style.color = itext.fill();
+      inputElem.style.opacity = String(opacity);
+    }
+
     inputElem.style.fontStyle = itext.fontFaceStyle;
     inputElem.style.fontWeight = itext.fontFaceWeight;
     // Line height must match the height of the font bounding box for the font metrics to be accurate.
