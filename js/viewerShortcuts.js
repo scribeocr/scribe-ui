@@ -289,6 +289,8 @@ export function selectBelowWord() {
  * @param {KeyboardEvent} event - The key down event.
  */
 export function handleKeyboardEvent(event) {
+  const selectedWords = ScribeViewer.CanvasSelection.getKonvaWords();
+
   // Zoom in shortcut
   // The modifier keys change what `event.key` is for the same button.
   // `+` becomes `=` when shift is pressed, and `×` when control and alt are pressed.
@@ -337,7 +339,7 @@ export function handleKeyboardEvent(event) {
     return;
   }
 
-  if (event.key === 'ArrowRight' && !ScribeViewer.KonvaIText.input) {
+  if (event.key === 'ArrowRight' && !ScribeViewer.KonvaIText.input && selectedWords.length > 0) {
     if (event.ctrlKey) {
       if (event.altKey) {
         modifySelectedWordBbox('right', 1);
@@ -382,7 +384,7 @@ export function handleKeyboardEvent(event) {
     return;
   }
 
-  if (event.key === 'ArrowLeft' && !ScribeViewer.KonvaIText.input) {
+  if (event.key === 'ArrowLeft' && !ScribeViewer.KonvaIText.input && selectedWords.length > 0) {
     if (event.ctrlKey) {
       if (event.altKey) {
         modifySelectedWordBbox('right', -1);
@@ -398,7 +400,7 @@ export function handleKeyboardEvent(event) {
     return;
   }
 
-  if (event.key === 'ArrowUp') {
+  if (event.key === 'ArrowUp' && selectedWords.length > 0) {
     selectAboveWord();
     event.preventDefault();
     event.stopPropagation();
@@ -406,7 +408,7 @@ export function handleKeyboardEvent(event) {
     return;
   }
 
-  if (event.key === 'ArrowDown') {
+  if (event.key === 'ArrowDown' && selectedWords.length > 0) {
     selectBelowWord();
     event.preventDefault();
     event.stopPropagation();
@@ -415,7 +417,6 @@ export function handleKeyboardEvent(event) {
   }
 
   if (event.key === 'Enter' && !ScribeViewer.KonvaIText.input) {
-    const selectedWords = ScribeViewer.CanvasSelection.getKonvaWords();
     if (selectedWords.length !== 1) return;
     const selectedWord = selectedWords[0];
     const pos = event.altKey ? -1 : 0;

@@ -483,12 +483,20 @@ export class ScribeViewer {
       deltaY = Math.max(deltaY, -minYDelta);
     }
 
-    const minX = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeViewer.stage.getAbsoluteScale().y * -1;
+    // Prevent panning the document outside of the viewport.
+    // These limits impose the less restrictive of:
+    // (1) half of the document must be within the viewport, or
+    // (2) half of the viewport must contain the document.
+    const minX1 = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeViewer.stage.getAbsoluteScale().y * -1;
+    const minX2 = scribe.data.pageMetrics[stateViewer.cp.n].dims.width * ScribeViewer.stage.getAbsoluteScale().y * -1 + ScribeViewer.stage.width() / 2;
+    const minX = Math.min(minX1, minX2);
     const minXDelta = Math.max(0, x - minX);
     deltaX = Math.max(deltaX, -minXDelta);
 
-    const maxX = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeViewer.stage.getAbsoluteScale().y * -1
+    const maxX1 = (scribe.data.pageMetrics[stateViewer.cp.n].dims.width / 2) * ScribeViewer.stage.getAbsoluteScale().y * -1
       + ScribeViewer.stage.width();
+    const maxX2 = ScribeViewer.stage.width() / 2;
+    const maxX = Math.max(maxX1, maxX2);
     const maxXDelta = Math.max(0, maxX - x);
     deltaX = Math.min(deltaX, maxXDelta);
 
