@@ -326,6 +326,7 @@ export class KonvaIText extends Konva.Shape {
     inputElem.style.fontSize = `${fontSizeHTML}px`;
     inputElem.style.fontFamily = itext.fontFaceName;
     inputElem.style.zIndex = '1';
+    inputElem.style.fontKerning = scribe.opt.kerning ? 'normal' : 'none';
 
     const angle = itext.getAbsoluteRotation();
     if (Math.abs(angle ?? 0) > 0.05) {
@@ -349,7 +350,7 @@ export class KonvaIText extends Konva.Shape {
     // Text with opacity 0 is not selectable, so we make it transparent instead.
     if (opacity === 0) {
       inputElem.style.color = 'transparent';
-      inputElem.style.opacity = 1;
+      inputElem.style.opacity = '1';
     } else {
       inputElem.style.color = itext.fill();
       inputElem.style.opacity = String(opacity);

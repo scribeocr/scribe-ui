@@ -64,7 +64,7 @@ async function recognizeArea(n, box, wordMode = false) {
   imageCoords.height = bottomClip - topClip;
   if (imageCoords.width < 4 || imageCoords.height < 4) return;
 
-  const res0 = await scribe.recognizePage(n, legacy, lstm, true, { rectangle: imageCoords, tessedit_pageseg_mode: psm, upscale });
+  const res0 = await scribe.recognizePageImp(n, legacy, lstm, true, { rectangle: imageCoords, tessedit_pageseg_mode: psm, upscale });
 
   let pageNew;
   if (legacy && lstm) {
