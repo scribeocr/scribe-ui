@@ -885,8 +885,12 @@ export class ScribeViewer {
     const imageMissing = false;
     const pdfMissing = false;
 
-    const group = ScribeViewer.getTextGroup(n);
-    group.destroyChildren();
+    if (ScribeViewer.#textGroups[n]) {
+      for (const group of Object.values(ScribeViewer.#textGroups[n])) {
+        group.destroyChildren();
+      }
+    }
+
     if (ScribeViewer.KonvaIText.inputWord && ScribeViewer.KonvaIText.inputWord.word.line.page.n === n
       && ScribeViewer.KonvaIText.inputRemove
     ) {
@@ -1003,36 +1007,47 @@ export class ScribeViewer {
   /** @type {InstanceType<typeof Konva.Layer>} */
   static layerOverlay;
 
-  /** @type {Array<InstanceType<typeof Konva.Group>>} */
+  /** @type {Array<Object<string, InstanceType<typeof Konva.Group>>>} */
   static #textGroups = [];
 
   /**
    *
    * @param {number} n
+   * @param {number} [orientation=0]
    */
-  static createGroup = (n) => {
+  static createGroup = (n, orientation = 0) => {
     const group = new Konva.Group();
     const dims = scribe.data.pageMetrics[n].dims;
     const angle = scribe.data.pageMetrics[n].angle || 0;
     const textRotation = scribe.opt.autoRotate ? 0 : angle;
     const pageOffsetY = ScribeViewer.getPageStop(n) ?? 30;
-    group.rotation(textRotation);
-    group.offset({ x: dims.width * 0.5, y: dims.height * 0.5 });
-    group.position({ x: dims.width * 0.5, y: pageOffsetY + dims.height * 0.5 });
+    group.rotation(textRotation + orientation * 90);
+    if (orientation % 2 === 1) {
+      group.offset({ x: dims.height * 0.5, y: dims.width * 0.5 });
+      group.position({ x: dims.width * 0.5, y: pageOffsetY + dims.height * 0.5 });
+    } else {
+      group.offset({ x: dims.width * 0.5, y: dims.height * 0.5 });
+      group.position({ x: dims.width * 0.5, y: pageOffsetY + dims.height * 0.5 });
+    }
     return group;
   };
 
   /**
    *
    * @param {number} n
+   * @param {number} [orientation=0]
    * @returns
    */
-  static getTextGroup = (n) => {
+  static getTextGroup = (n, orientation = 0) => {
     if (!ScribeViewer.#textGroups[n]) {
-      ScribeViewer.#textGroups[n] = ScribeViewer.createGroup(n);
-      ScribeViewer.layerText.add(ScribeViewer.#textGroups[n]);
+      ScribeViewer.#textGroups[n] = {};
     }
-    return ScribeViewer.#textGroups[n];
+    if (!ScribeViewer.#textGroups[n][orientation]) {
+      ScribeViewer.#textGroups[n][orientation] = ScribeViewer.createGroup(n, orientation);
+      ScribeViewer.layerText.add(ScribeViewer.#textGroups[n][orientation]);
+    }
+
+    return ScribeViewer.#textGroups[n][orientation];
   };
 
   /** @type {Array<InstanceType<typeof Konva.Group>>} */
@@ -1184,20 +1199,28 @@ export class ScribeViewer {
   static getKonvaWords = () => {
     /** @type {Array<KonvaOcrWord>} */
     const words = [];
-    if (ScribeViewer.#textGroups[stateViewer.cp.n - 1]?.children) {
-      ScribeViewer.#textGroups[stateViewer.cp.n - 1].children.forEach((x) => {
-        if (x instanceof KonvaOcrWord) words.push(x);
-      });
+    if (ScribeViewer.#textGroups[stateViewer.cp.n - 1]) {
+      for (const group of Object.values(ScribeViewer.#textGroups[stateViewer.cp.n - 1])) {
+        group.children.forEach((x) => {
+          if (x instanceof KonvaOcrWord) words.push(x);
+        });
+      }
     }
-    if (ScribeViewer.#textGroups[stateViewer.cp.n]?.children) {
-      ScribeViewer.#textGroups[stateViewer.cp.n].children.forEach((x) => {
-        if (x instanceof KonvaOcrWord) words.push(x);
-      });
+
+    if (ScribeViewer.#textGroups[stateViewer.cp.n]) {
+      for (const group of Object.values(ScribeViewer.#textGroups[stateViewer.cp.n])) {
+        group.children.forEach((x) => {
+          if (x instanceof KonvaOcrWord) words.push(x);
+        });
+      }
     }
-    if (ScribeViewer.#textGroups[stateViewer.cp.n + 1]?.children) {
-      ScribeViewer.#textGroups[stateViewer.cp.n + 1].children.forEach((x) => {
-        if (x instanceof KonvaOcrWord) words.push(x);
-      });
+
+    if (ScribeViewer.#textGroups[stateViewer.cp.n + 1]) {
+      for (const group of Object.values(ScribeViewer.#textGroups[stateViewer.cp.n + 1])) {
+        group.children.forEach((x) => {
+          if (x instanceof KonvaOcrWord) words.push(x);
+        });
+      }
     }
 
     return words;
@@ -1290,7 +1313,9 @@ export class ScribeViewer {
     for (let i = 0; i < ScribeViewer.textGroupsRenderIndices.length; i++) {
       const n = ScribeViewer.textGroupsRenderIndices[i];
       if (Math.abs(n - stateViewer.cp.n) > 1 || !outsideViewOnly) {
-        ScribeViewer.#textGroups[n].destroyChildren();
+        for (const group of Object.values(ScribeViewer.#textGroups[n])) {
+          group.destroyChildren();
+        }
         ScribeViewer.textGroupsRenderIndices.splice(i, 1);
         i--;
       }
@@ -1487,12 +1512,12 @@ const addBlockOutline = (n, box, angleAdj, label) => {
  * @param {OcrPage} page
  */
 function renderCanvasWords(page) {
-  const group = ScribeViewer.getTextGroup(page.n);
+  const group0 = ScribeViewer.getTextGroup(page.n);
 
   const angle = scribe.data.pageMetrics[page.n].angle || 0;
   const textRotation = scribe.opt.autoRotate ? 0 : angle;
 
-  group.rotation(textRotation);
+  group0.rotation(textRotation);
 
   if (!ScribeViewer.textGroupsRenderIndices.includes(page.n)) ScribeViewer.textGroupsRenderIndices.push(page.n);
 
@@ -1511,6 +1536,8 @@ function renderCanvasWords(page) {
 
   for (let i = 0; i < page.lines.length; i++) {
     const lineObj = page.lines[i];
+
+    const group = ScribeViewer.getTextGroup(page.n, lineObj.orientation);
 
     const angleAdjLine = imageRotated ? scribe.utils.ocr.calcLineStartAngleAdj(lineObj) : { x: 0, y: 0 };
 

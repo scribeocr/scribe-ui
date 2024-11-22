@@ -197,9 +197,9 @@ export class KonvaIText extends Konva.Shape {
     const layer = itext.getLayer();
     if (!layer) throw new Error('Object must be added to a layer before drawing text');
 
-    const pointerCoordsRel = layer.getRelativePointerPosition();
+    const pointerCoordsRel = itext.getRelativePointerPosition();
     let letterIndex = 0;
-    let leftI = itext.x() - itext.leftSideBearing;
+    let leftI = -itext.leftSideBearing;
     for (let i = 0; i < itext.charArr.length; i++) {
       // For most letters, the letter is selected if the pointer is in the left 75% of the advance.
       // This could be rewritten to be more precise by using the actual bounding box of each letter,
@@ -316,19 +316,24 @@ export class KonvaIText extends Konva.Shape {
     // Align with baseline
     const topHTML = y1 - metrics.fontBoundingBoxAscent + fontSizeHTML * 0.6;
 
+    const angle = itext.getAbsoluteRotation();
+
     // Some padding needs to be present for the cursor to be visible when before the first letter or after the last letter.
     const pad = 5;
     inputElem.style.paddingLeft = `${pad}px`;
     inputElem.style.paddingRight = `${pad}px`;
     inputElem.style.position = 'absolute';
-    inputElem.style.left = `${x1 - pad}px`;
-    inputElem.style.top = `${topHTML}px`;
+
+    const topPadOffset = 5 * Math.sin(angle * (Math.PI / 180));
+    const leftPadOffset = 5 * Math.cos(angle * (Math.PI / 180));
+
+    inputElem.style.left = `${x1 - leftPadOffset}px`;
+    inputElem.style.top = `${topHTML - topPadOffset}px`;
     inputElem.style.fontSize = `${fontSizeHTML}px`;
     inputElem.style.fontFamily = itext.fontFaceName;
     inputElem.style.zIndex = '1';
     inputElem.style.fontKerning = scribe.opt.kerning ? 'normal' : 'none';
 
-    const angle = itext.getAbsoluteRotation();
     if (Math.abs(angle ?? 0) > 0.05) {
       inputElem.style.transformOrigin = `left ${y1 - topHTML}px`;
       inputElem.style.transform = `rotate(${angle}deg)`;
