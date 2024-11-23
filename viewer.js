@@ -1050,6 +1050,19 @@ export class ScribeViewer {
     return ScribeViewer.#textGroups[n][orientation];
   };
 
+  /**
+   *
+   * @param {number} n
+   * @param {number} [rotation=0]
+   * @returns
+   */
+  static setTextGroupRotation = (n, rotation = 0) => {
+    ScribeViewer.getTextGroup(n);
+    for (const [key, group] of Object.entries(ScribeViewer.#textGroups[n])) {
+      group.rotation(Number(key) * 90 + rotation);
+    }
+  };
+
   /** @type {Array<InstanceType<typeof Konva.Group>>} */
   static #overlayGroups = [];
 
@@ -1512,12 +1525,10 @@ const addBlockOutline = (n, box, angleAdj, label) => {
  * @param {OcrPage} page
  */
 function renderCanvasWords(page) {
-  const group0 = ScribeViewer.getTextGroup(page.n);
-
   const angle = scribe.data.pageMetrics[page.n].angle || 0;
   const textRotation = scribe.opt.autoRotate ? 0 : angle;
 
-  group0.rotation(textRotation);
+  ScribeViewer.setTextGroupRotation(page.n, textRotation);
 
   if (!ScribeViewer.textGroupsRenderIndices.includes(page.n)) ScribeViewer.textGroupsRenderIndices.push(page.n);
 
