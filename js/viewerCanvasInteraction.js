@@ -353,7 +353,7 @@ const deleteLayoutRegionClick = () => {
 const copyTableContentsClick = () => {
   hideContextMenu();
   const selectedColumns = ScribeViewer.CanvasSelection.getKonvaDataColumns();
-  if (selectedColumns.length === 0) return;
+  if (selectedColumns.length === 0 || !navigator.clipboard) return;
 
   const table = document.createElement('table');
 

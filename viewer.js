@@ -1404,8 +1404,9 @@ function getElementIdsInRange(range) {
 
 document.addEventListener('copy', (e) => {
   const sel = /** @type {Selection} */ (window.getSelection());
+  const clipboardData = e.clipboardData;
 
-  if (sel.rangeCount === 0) return;
+  if (sel.rangeCount === 0 || !clipboardData) return;
 
   const range = sel.getRangeAt(0);
 
@@ -1422,8 +1423,7 @@ document.addEventListener('copy', (e) => {
     text += scribe.utils.writeText([scribe.data.ocr.active[n]], 0, 0, false, false, ids);
   }
 
-  // @ts-ignore
-  e.clipboardData.setData('text/plain', text);
+  clipboardData.setData('text/plain', text);
 
   e.preventDefault(); // Prevent the default copy action
 });
