@@ -1474,6 +1474,7 @@ async function compareGroundTruth() {
     const res = await scribe.compareOCR(scribe.data.ocr.active, scribe.data.ocr['Ground Truth'], compOptions);
 
     scribe.data.ocr[oemActive] = res.ocr;
+    scribe.data.ocr.active = scribe.data.ocr[oemActive];
 
     replaceObjectProperties(evalStats, res.metrics);
   }
