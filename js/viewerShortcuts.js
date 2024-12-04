@@ -289,6 +289,10 @@ export function selectBelowWord() {
  * @param {KeyboardEvent} event - The key down event.
  */
 export function handleKeyboardEvent(event) {
+  // If the user is typing in an input field, we assume they are trying to interact with that field and not the viewer.
+  const activeElem = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (activeElem && (activeElem instanceof HTMLInputElement || activeElem instanceof HTMLSelectElement)) return;
+
   const selectedWords = ScribeViewer.CanvasSelection.getKonvaWords();
 
   // Zoom in shortcut
