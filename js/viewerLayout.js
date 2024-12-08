@@ -1301,7 +1301,12 @@ function setDefaultLayout(n) {
   scribe.data.layoutRegions.defaultRegions = structuredClone(scribe.data.layoutRegions.pages[n].boxes);
   for (let i = 0; i < scribe.data.layoutRegions.pages.length; i++) {
     if (scribe.data.layoutRegions.pages[i].default) {
-      scribe.data.layoutRegions.pages[i].boxes = structuredClone(scribe.data.layoutRegions.defaultRegions);
+      const boxes = structuredClone(scribe.data.layoutRegions.defaultRegions);
+      for (const [key, value] of Object.entries(boxes)) {
+        value.id = scribe.utils.getRandomAlphanum(10);
+        value.page = scribe.data.layoutRegions.pages[i];
+      }
+      scribe.data.layoutRegions.pages[i].boxes = boxes;
     }
   }
 }
@@ -1314,7 +1319,12 @@ function setDefaultLayoutDataTable(n) {
   scribe.data.layoutDataTables.defaultTables = structuredClone(scribe.data.layoutDataTables.pages[n].tables);
   for (let i = 0; i < scribe.data.layoutDataTables.pages.length; i++) {
     if (scribe.data.layoutDataTables.pages[i].default) {
-      scribe.data.layoutDataTables.pages[i].tables = structuredClone(scribe.data.layoutDataTables.defaultTables);
+      const tables = structuredClone(scribe.data.layoutDataTables.defaultTables);
+      tables.forEach((x) => {
+        x.id = scribe.utils.getRandomAlphanum(10);
+        x.page = scribe.data.layoutDataTables.pages[i];
+      });
+      scribe.data.layoutDataTables.pages[i].tables = tables;
     }
   }
 }
