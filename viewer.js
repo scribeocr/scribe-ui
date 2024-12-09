@@ -15,6 +15,7 @@ import {
   modifySelectedWordSuper,
 } from './js/viewerModifySelectedWords.js';
 import { getAllFileEntries } from './js/dragAndDrop.js';
+import { deleteSelectedLayoutDataTable, deleteSelectedLayoutRegion } from './js/viewerModifySelectedLayout.js';
 
 Konva.autoDrawEnabled = false;
 Konva.dragButtons = [0];
@@ -267,6 +268,10 @@ class CanvasSelection {
   static modifySelectedWordSuper = modifySelectedWordSuper;
 
   static modifySelectedWordSmallCaps = modifySelectedWordSmallCaps;
+
+  static deleteSelectedLayoutDataTable = deleteSelectedLayoutDataTable;
+
+  static deleteSelectedLayoutRegion = deleteSelectedLayoutRegion;
 }
 
 function getCenter(p1, p2) {

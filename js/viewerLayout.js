@@ -1294,37 +1294,45 @@ export function addLayoutDataTable(n, box) {
 }
 
 /**
- *
- * @param {number} n
+ * Apply the layout regions from one page to range of other pages.
+ * @param {number} srcN - Page number of the source layout.
+ * @param {number} minN - Minimum page number to apply the layout to.
+ * @param {number} maxN - Maximum page number to apply the layout to (inclusive).
  */
-function setDefaultLayout(n) {
-  scribe.data.layoutRegions.defaultRegions = structuredClone(scribe.data.layoutRegions.pages[n].boxes);
-  for (let i = 0; i < scribe.data.layoutRegions.pages.length; i++) {
-    if (scribe.data.layoutRegions.pages[i].default) {
-      const boxes = structuredClone(scribe.data.layoutRegions.defaultRegions);
-      for (const [key, value] of Object.entries(boxes)) {
-        value.id = scribe.utils.getRandomAlphanum(10);
-        value.page = scribe.data.layoutRegions.pages[i];
-      }
-      scribe.data.layoutRegions.pages[i].boxes = boxes;
+function applyLayoutRegions(srcN, minN, maxN) {
+  const srcRegions = scribe.data.layoutRegions.pages[srcN].boxes;
+  for (let i = minN; i <= maxN; i++) {
+    if (i === srcN) continue;
+    const boxes = structuredClone(srcRegions);
+    for (const [key, value] of Object.entries(boxes)) {
+      value.id = scribe.utils.getRandomAlphanum(10);
+      value.page = scribe.data.layoutRegions.pages[i];
+    }
+    scribe.data.layoutRegions.pages[i].boxes = boxes;
+    if (Math.abs(i - ScribeViewer.state.cp.n) < 2) {
+      ScribeViewer.layout.renderLayoutBoxes(i);
     }
   }
 }
 
 /**
- *
- * @param {number} n
+ * Apply the layout data tables from one page to range of other pages.
+ * @param {number} srcN - Page number of the source layout.
+ * @param {number} minN - Minimum page number to apply the layout to.
+ * @param {number} maxN - Maximum page number to apply the layout to (inclusive).
  */
-function setDefaultLayoutDataTable(n) {
-  scribe.data.layoutDataTables.defaultTables = structuredClone(scribe.data.layoutDataTables.pages[n].tables);
-  for (let i = 0; i < scribe.data.layoutDataTables.pages.length; i++) {
-    if (scribe.data.layoutDataTables.pages[i].default) {
-      const tables = structuredClone(scribe.data.layoutDataTables.defaultTables);
-      tables.forEach((x) => {
-        x.id = scribe.utils.getRandomAlphanum(10);
-        x.page = scribe.data.layoutDataTables.pages[i];
-      });
-      scribe.data.layoutDataTables.pages[i].tables = tables;
+function applyLayoutDataTables(srcN, minN, maxN) {
+  const srcTables = scribe.data.layoutDataTables.pages[srcN].tables;
+  for (let i = minN; i <= maxN; i++) {
+    if (i === srcN) continue;
+    const tables = structuredClone(srcTables);
+    tables.forEach((x) => {
+      x.id = scribe.utils.getRandomAlphanum(10);
+      x.page = scribe.data.layoutDataTables.pages[i];
+    });
+    scribe.data.layoutDataTables.pages[i].tables = tables;
+    if (Math.abs(i - ScribeViewer.state.cp.n) < 2) {
+      ScribeViewer.layout.renderLayoutBoxes(i);
     }
   }
 }
@@ -1346,7 +1354,7 @@ export class layout {
 
   static addLayoutDataTable = addLayoutDataTable;
 
-  static setDefaultLayout = setDefaultLayout;
+  static applyLayoutRegions = applyLayoutRegions;
 
-  static setDefaultLayoutDataTable = setDefaultLayoutDataTable;
+  static applyLayoutDataTables = applyLayoutDataTables;
 }
