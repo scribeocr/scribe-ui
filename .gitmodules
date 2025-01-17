@@ -3,4 +3,4 @@
 	url = https://github.com/scribeocr/scrollview-web.git
 [submodule "scribe.js"]
 	path = scribe.js
-	url = git@github.com:scribeocr/scribe.js.git
+	url = https://github.com/scribeocr/scribe.js.git
