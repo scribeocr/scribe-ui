@@ -174,11 +174,11 @@ export class ViewerImageCache {
   };
 
   /**
-     *
-     * @param {number} n - Page number
-     * @param {ImagePropertiesRequest} [props] - Image properties needed.
-     *  Image properties should only be defined if needed, as they can require the image to be re-rendered.
-     */
+   *
+   * @param {number} n - Page number
+   * @param {ImagePropertiesRequest} [props] - Image properties needed.
+   *  Image properties should only be defined if needed, as they can require the image to be re-rendered.
+   */
   static getBinaryBitmap = async (n, props) => {
     const binaryN = await scribe.data.image.getBinary(n, props);
     if (ViewerImageCache.#binaryBitmapPromises[n]) await ViewerImageCache.#binaryBitmapPromises[n];
@@ -254,12 +254,12 @@ export class ViewerImageCache {
   };
 
   /**
-     * Render the current page, and a few pages ahead and behind.
-     * This is similar to `preRenderRange`, however has several differences:
-     * (1) Starts rendering at the current page, and goes outward from there.
-     * (2) Also renders image bitmaps (not just the image strings), and deletes them when they are sufficiently far away.
-     * @param {number} curr
-     */
+   * Render the current page, and a few pages ahead and behind.
+   * This is similar to `preRenderRange`, however has several differences:
+   * (1) Starts rendering at the current page, and goes outward from there.
+   * (2) Also renders image bitmaps (not just the image strings), and deletes them when they are sufficiently far away.
+   * @param {number} curr
+   */
   static renderAheadBehindBrowser = async (curr) => {
     const resArr = [];
     resArr.push(ViewerImageCache.addKonvaImage(curr));

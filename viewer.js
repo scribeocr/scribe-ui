@@ -156,9 +156,9 @@ class CanvasSelection {
   };
 
   /**
- *
- * @param {Array<string>} layoutBoxIdArr
- */
+   *
+   * @param {Array<string>} layoutBoxIdArr
+   */
   static selectLayoutBoxesById = (layoutBoxIdArr) => {
     // eslint-disable-next-line no-use-before-define
     const konvaLayoutBoxes = ScribeViewer.getKonvaRegions().filter((x) => layoutBoxIdArr.includes(x.layoutBox.id));
@@ -374,9 +374,9 @@ export class ScribeViewer {
   };
 
   /**
- *
- * @returns {{x: number, y: number}}
- */
+   *
+   * @returns {{x: number, y: number}}
+   */
   static getStageCenter = () => {
     const layerWidth = ScribeViewer.stage.width();
     const layerHeight = ScribeViewer.stage.height();
@@ -921,12 +921,12 @@ export class ScribeViewer {
   };
 
   /**
-    * Render page `n` in the UI.
-    * @param {number} n
-    * @param {boolean} [scroll=false] - Scroll to the top of the page being rendered.
-    * @param {boolean} [refresh=true] - Refresh the page even if it is already displayed.
-    * @returns
-    */
+   * Render page `n` in the UI.
+   * @param {number} n
+   * @param {boolean} [scroll=false] - Scroll to the top of the page being rendered.
+   * @param {boolean} [refresh=true] - Refresh the page even if it is already displayed.
+   * @returns
+   */
   static async displayPage(n, scroll = false, refresh = true) {
     // Return early if (1) page does not exist or (2) another page is actively being rendered.
     if (Number.isNaN(n) || n < 0 || n > (scribe.inputData.pageCount - 1)) {

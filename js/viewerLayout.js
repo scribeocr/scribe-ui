@@ -343,9 +343,9 @@ class KonvaRegionControlVertical extends Konva.Line {
 
 export class KonvaDataTableControl extends Konva.Line {
   /**
-     *
-     * @param {KonvaDataTable} konvaTable
-     */
+   *
+   * @param {KonvaDataTable} konvaTable
+   */
   constructor(konvaTable, top = true) {
     super({
       x: konvaTable.coords.left,
@@ -891,9 +891,9 @@ export const checkDataColumnsAdjacent = (selectedDataColumns) => {
 };
 
 /**
-*
-* @param {LayoutDataTable} table
-*/
+ *
+ * @param {LayoutDataTable} table
+ */
 const getAdjacentTables = (table) => {
   const adjacentTables = [];
 
@@ -917,10 +917,10 @@ const getAdjacentTables = (table) => {
 };
 
 /**
-*
-* @param {Array<LayoutDataTable>} dataTables
-* @returns
-*/
+ *
+ * @param {Array<LayoutDataTable>} dataTables
+ * @returns
+ */
 export const checkDataTablesAdjacent = (dataTables) => {
   for (let i = 0; i < dataTables.length - 1; i++) {
     const table = dataTables[i];

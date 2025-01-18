@@ -82,9 +82,9 @@ export class KonvaIText extends Konva.Shape {
       opacity,
       fill,
       /**
-         * @param {InstanceType<typeof Konva.Context>} context
-         * @param {KonvaIText} shape
-         */
+       * @param {InstanceType<typeof Konva.Context>} context
+       * @param {KonvaIText} shape
+       */
       // @ts-ignore
       sceneFunc: (context, shape) => {
         context.font = `${shape.fontFaceStyle} ${shape.fontFaceWeight} ${shape.fontSize}px ${shape.fontFaceName}`;
@@ -140,9 +140,9 @@ export class KonvaIText extends Konva.Shape {
         }
       },
       /**
-         * @param {InstanceType<typeof Konva.Context>} context
-         * @param {KonvaIText} shape
-         */
+       * @param {InstanceType<typeof Konva.Context>} context
+       * @param {KonvaIText} shape
+       */
       // @ts-ignore
       hitFunc: (context, shape) => {
         context.beginPath();
@@ -217,10 +217,10 @@ export class KonvaIText extends Konva.Shape {
   };
 
   /**
-     *
-     * @param {string} text
-     * @param {number} fontSizeHTMLSmallCaps
-     */
+   *
+   * @param {string} text
+   * @param {number} fontSizeHTMLSmallCaps
+   */
   static makeSmallCapsDivs = (text, fontSizeHTMLSmallCaps) => {
     const textDivs0 = text.match(/([a-z]+)|([^a-z]+)/g);
     if (!textDivs0) return '';
@@ -281,9 +281,9 @@ export class KonvaIText extends Konva.Shape {
   };
 
   /**
-     * Position and show the input for editing.
-     * @param {KonvaIText} itext
-     */
+   * Position and show the input for editing.
+   * @param {KonvaIText} itext
+   */
   static itextToElem = (itext) => {
     const inputElem = document.createElement('span');
 
