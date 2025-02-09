@@ -13,7 +13,7 @@ export class KonvaIText extends Konva.Shape {
 
   static enableEditing = false;
 
-  static smartQuotes = false;
+  static smartQuotes = true;
 
   /**
    * The `KonvaIText` class is a Konva shape that displays text, which is interactive and can be edited.
