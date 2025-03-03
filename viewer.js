@@ -11,8 +11,7 @@ import { ViewerImageCache } from './js/viewerImageCache.js';
 import { handleKeyboardEvent } from './js/viewerShortcuts.js';
 import { contextMenuFunc, mouseupFunc2 } from './js/viewerCanvasInteraction.js';
 import {
-  deleteSelectedWord, modifySelectedWordBbox, modifySelectedWordFontFamily, modifySelectedWordFontSize, modifySelectedWordSmallCaps, modifySelectedWordStyle,
-  modifySelectedWordSuper,
+  deleteSelectedWord, modifySelectedWordBbox, modifySelectedWordStyle,
 } from './js/viewerModifySelectedWords.js';
 import { getAllFileEntries } from './js/dragAndDrop.js';
 import { deleteSelectedLayoutDataTable, deleteSelectedLayoutRegion } from './js/viewerModifySelectedLayout.js';
@@ -261,14 +260,6 @@ class CanvasSelection {
 
   static modifySelectedWordStyle = modifySelectedWordStyle;
 
-  static modifySelectedWordFontSize = modifySelectedWordFontSize;
-
-  static modifySelectedWordFontFamily = modifySelectedWordFontFamily;
-
-  static modifySelectedWordSuper = modifySelectedWordSuper;
-
-  static modifySelectedWordSmallCaps = modifySelectedWordSmallCaps;
-
   static deleteSelectedLayoutDataTable = deleteSelectedLayoutDataTable;
 
   static deleteSelectedLayoutRegion = deleteSelectedLayoutRegion;
@@ -347,7 +338,7 @@ export class ScribeViewer {
     let y = margin;
     for (let i = 0; i < scribe.data.pageMetrics.length; i++) {
       ScribeViewer.#pageStopsStart[i] = y;
-      const dims = scribe.data.pageMetrics[i].dims;
+      const dims = scribe.data.pageMetrics[i]?.dims;
       if (!dims) return;
 
       // TODO: This does not work because angle is not populated at this point.
@@ -1588,7 +1579,7 @@ function renderCanvasWords(page) {
       const visualBaseline = lineObj.bbox.bottom + lineObj.baseline[1] + angleAdjLine.y + angleAdjWord.y;
 
       let top = visualBaseline;
-      if (wordObj.sup || wordObj.dropcap) top = wordObj.bbox.bottom + angleAdjLine.y + angleAdjWord.y;
+      if (wordObj.style.sup || wordObj.style.dropcap) top = wordObj.bbox.bottom + angleAdjLine.y + angleAdjWord.y;
 
       const visualLeft = wordObj.bbox.left + angleAdjLine.x + angleAdjWord.x;
 

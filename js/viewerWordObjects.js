@@ -67,7 +67,7 @@ export class KonvaIText extends Konva.Shape {
     }
 
     let y = yActual - fontSize * 0.6;
-    if (!word.visualCoords && (word.sup || word.dropcap)) {
+    if (!word.visualCoords && (word.style.sup || word.style.dropcap)) {
       const fontDesc = font.opentype.descender / font.opentype.unitsPerEm * fontSize;
       y = yActual - fontSize * 0.6 + fontDesc;
     }
@@ -92,7 +92,7 @@ export class KonvaIText extends Konva.Shape {
         context.fillStyle = shape.fill();
         context.lineWidth = 1;
 
-        if (!shape.word.visualCoords && (shape.word.sup || shape.word.dropcap)) {
+        if (!shape.word.visualCoords && (shape.word.style.sup || shape.word.style.dropcap)) {
           const fontI = scribe.data.font.getWordFont(shape.word);
           const fontDesc = fontI.opentype.descender / fontI.opentype.unitsPerEm * shape.fontSize;
           shape.setAttr('y', shape.yActual - shape.fontSize * 0.6 + fontDesc);
@@ -104,7 +104,7 @@ export class KonvaIText extends Konva.Shape {
         for (let i = 0; i < shape.charArr.length; i++) {
           let charI = shape.charArr[i];
 
-          if (shape.word.smallCaps) {
+          if (shape.word.style.smallCaps) {
             if (charI === charI.toUpperCase()) {
               context.font = `${shape.fontFaceStyle} ${shape.fontFaceWeight} ${shape.fontSize}px ${shape.fontFaceName}`;
             } else {
@@ -116,6 +116,17 @@ export class KonvaIText extends Konva.Shape {
           context.fillText(charI, leftI, shape.fontSize * 0.6);
 
           leftI += shape.advanceArrTotal[i];
+        }
+
+        if (shape.word.style.underline) {
+          const underlineThickness = shape.fontFaceWeight === 'bold' ? Math.ceil(shape.fontSize / 12) : Math.ceil(shape.fontSize / 24);
+          const underlineOffset = Math.ceil(shape.fontSize / 12) + underlineThickness / 2;
+          context.strokeStyle = shape.fill();
+          context.lineWidth = underlineThickness;
+          context.beginPath();
+          context.moveTo(0, shape.fontSize * 0.6 + underlineOffset);
+          context.lineTo(shape.width(), shape.fontSize * 0.6 + underlineOffset);
+          context.stroke();
         }
 
         if (shape.outline) {
@@ -343,7 +354,7 @@ export class KonvaIText extends Konva.Shape {
     // Additionally, while there is a small-caps CSS property, it does not allow for customizing the size of the small caps.
     // Therefore, we handle small caps by making all text print as uppercase using the `text-transform` CSS property,
     // and then wrapping each letter in a span with a smaller font size.
-    if (itext.word.smallCaps) {
+    if (itext.word.style.smallCaps) {
       inputElem.style.textTransform = 'uppercase';
       inputElem.innerHTML = KonvaIText.makeSmallCapsDivs(wordStr, fontSizeHTMLSmallCaps);
     } else {
@@ -359,6 +370,15 @@ export class KonvaIText extends Konva.Shape {
     } else {
       inputElem.style.color = itext.fill();
       inputElem.style.opacity = String(opacity);
+    }
+
+    if (itext.word.style.underline) {
+      const underlineThickness = itext.word.style.bold ? Math.ceil(fontSizeHTML / 12) : Math.ceil(fontSizeHTML / 24);
+      const underlineOffset = Math.ceil(fontSizeHTML / 12) + Math.ceil(fontSizeHTML / 24) / 2;
+      inputElem.style.textDecoration = 'underline';
+      inputElem.style.textDecorationThickness = `${underlineThickness}px`;
+      inputElem.style.textDecorationColor = itext.fill();
+      inputElem.style.textUnderlineOffset = `${underlineOffset}px`;
     }
 
     inputElem.style.fontStyle = itext.fontFaceStyle;
@@ -406,7 +426,7 @@ export class KonvaIText extends Konva.Shape {
 
     const fontSizeHTMLSmallCaps = itext.fontSize * scale * fontI.smallCapsMult;
 
-    if (itext.word.smallCaps) {
+    if (itext.word.style.smallCaps) {
       inputElem.oninput = () => {
         const index = getInputCursorIndex();
         const textContent = inputElem.textContent || '';

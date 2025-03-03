@@ -5,7 +5,7 @@ import {
 import scribe from '../scribe.js/scribe.js';
 import { KonvaIText, KonvaOcrWord } from './viewerWordObjects.js';
 import {
-  deleteSelectedWord, modifySelectedWordBbox, modifySelectedWordFontSize, modifySelectedWordStyle,
+  deleteSelectedWord, modifySelectedWordBbox, modifySelectedWordStyle,
 } from './viewerModifySelectedWords.js';
 
 /**
@@ -432,7 +432,9 @@ export function handleKeyboardEvent(event) {
   }
 
   if (event.key === 'i' && event.ctrlKey) {
-    modifySelectedWordStyle('italic');
+    modifySelectedWordStyle({
+      italic: !selectedWords[0].word.style.italic,
+    });
     event.preventDefault();
     event.stopPropagation();
     ScribeViewer.interactionCallback(event);
@@ -440,7 +442,19 @@ export function handleKeyboardEvent(event) {
   }
 
   if (event.key === 'b' && event.ctrlKey) {
-    modifySelectedWordStyle('bold');
+    modifySelectedWordStyle({
+      bold: !selectedWords[0].word.style.bold,
+    });
+    event.preventDefault();
+    event.stopPropagation();
+    ScribeViewer.interactionCallback(event);
+    return;
+  }
+
+  if (event.key === 'u' && event.ctrlKey) {
+    modifySelectedWordStyle({
+      underline: !selectedWords[0].word.style.underline,
+    });
     event.preventDefault();
     event.stopPropagation();
     ScribeViewer.interactionCallback(event);
@@ -456,7 +470,10 @@ export function handleKeyboardEvent(event) {
   }
 
   if (event.altKey && ['+', '=', '×'].includes(event.key) && !ScribeViewer.KonvaIText.input) {
-    modifySelectedWordFontSize('plus');
+    const fontSize = selectedWords[0].fontSize + 1;
+    modifySelectedWordStyle({
+      size: fontSize,
+    });
     event.preventDefault();
     event.stopPropagation();
     ScribeViewer.interactionCallback(event);
@@ -464,7 +481,10 @@ export function handleKeyboardEvent(event) {
   }
 
   if (event.altKey && ['-', '_', '–'].includes(event.key) && !ScribeViewer.KonvaIText.input) {
-    modifySelectedWordFontSize('minus');
+    const fontSize = selectedWords[0].fontSize - 1;
+    modifySelectedWordStyle({
+      size: fontSize,
+    });
     event.preventDefault();
     event.stopPropagation();
     ScribeViewer.interactionCallback(event);
