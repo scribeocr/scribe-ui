@@ -5,7 +5,7 @@ import { search } from './js/viewerSearch.js';
 import {
   KonvaDataColumn, KonvaLayout, KonvaRegion, layout,
 } from './js/viewerLayout.js';
-import { replaceObjectProperties } from './scribe.js/js/utils/miscUtils.js';
+import { clearObjectProperties } from './scribe.js/js/utils/miscUtils.js';
 import { KonvaIText, KonvaOcrWord } from './js/viewerWordObjects.js';
 import { ViewerImageCache } from './js/viewerImageCache.js';
 import { handleKeyboardEvent } from './js/viewerShortcuts.js';
@@ -1472,7 +1472,8 @@ async function compareGroundTruth() {
     scribe.data.ocr[oemActive] = res.ocr;
     scribe.data.ocr.active = scribe.data.ocr[oemActive];
 
-    replaceObjectProperties(evalStats, res.metrics);
+    clearObjectProperties(evalStats);
+    Object.assign(evalStats, res.metrics);
   }
 }
 
