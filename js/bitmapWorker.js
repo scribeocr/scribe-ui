@@ -1,4 +1,4 @@
-const parentPort = typeof process === 'undefined' ? globalThis : (await import('worker_threads')).parentPort;
+const parentPort = typeof process === 'undefined' ? globalThis : (await import('node:worker_threads')).parentPort;
 if (!parentPort) throw new Error('This file must be run in a worker');
 
 function imageStrToBlob(imgStr) {

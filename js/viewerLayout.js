@@ -112,8 +112,21 @@ export class KonvaLayout extends Konva.Rect {
         yActual: origY + height * 0.5,
         word: wordObj,
         dynamicWidth: true,
-        editTextCallback: async (obj) => {
+        changeTextCallback: async (obj) => {
           layoutBox.order = parseInt(obj.word.text);
+        },
+        inputTextCallback: async (obj) => {
+          if (!KonvaIText.input) return;
+          // Empty is the only allowed non-numeric value.
+          if (KonvaIText.input.textContent === '') return;
+          if (!KonvaIText.input.textContent
+            || /[^\d]/.test(KonvaIText.input.textContent)
+            || parseInt(KonvaIText.input.textContent) < 0
+            || parseInt(KonvaIText.input.textContent) > 99) {
+            KonvaIText.input.innerHTML = KonvaIText.inputInnerHTMLLast;
+            KonvaIText.setCursor(KonvaIText.inputCursorLast);
+            return;
+          }
         },
       });
       this.label = label;

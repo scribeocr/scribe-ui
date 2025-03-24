@@ -291,7 +291,9 @@ export function selectBelowWord() {
 export function handleKeyboardEvent(event) {
   // If the user is typing in an input field, we assume they are trying to interact with that field and not the viewer.
   const activeElem = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  if (activeElem && (activeElem instanceof HTMLInputElement || activeElem instanceof HTMLSelectElement)) return;
+  if (activeElem && activeElem instanceof HTMLInputElement) return;
+  if (activeElem && activeElem instanceof HTMLSelectElement
+    && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) return;
 
   const selectedWords = ScribeViewer.CanvasSelection.getKonvaWords();
 

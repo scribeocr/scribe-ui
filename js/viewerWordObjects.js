@@ -5,6 +5,14 @@ export class KonvaIText extends Konva.Shape {
   /** @type {?HTMLSpanElement} */
   static input = null;
 
+  /**
+   * Property containing the innerHTML of the input element before the current edit.
+   * Used to restore the input to its previous state within a callback function if the new value is invalid.
+   */
+  static inputInnerHTMLLast = '';
+
+  static inputCursorLast = 0;
+
   /** @type {?KonvaIText} */
   static inputWord = null;
 
@@ -31,11 +39,12 @@ export class KonvaIText extends Konva.Shape {
    * @param {string} [options.fill='black']
    * @param {boolean} [options.dynamicWidth=false] - If `true`, the width of the text box will be calculated dynamically based on the text content, rather than using the bounding box.
    *    This is used for dummy text boxes that are not tied to OCR, however should be `false` for OCR text boxes.
-   * @param {Function} options.editTextCallback
+   * @param {Function} [options.changeTextCallback] - Optional callback function that is called when the text is edited and the input loses focus.
+   * @param {Function} [options.inputTextCallback] - Optional callback function that is called when a keystroke modifies the value of the text input.
    */
   constructor({
     x, yActual, word, rotation = 0,
-    outline = false, selected = false, fillBox = false, opacity = 1, fill = 'black', dynamicWidth = false, editTextCallback,
+    outline = false, selected = false, fillBox = false, opacity = 1, fill = 'black', dynamicWidth = false, changeTextCallback, inputTextCallback,
   }) {
     const {
       charSpacing, leftSideBearing, rightSideBearing, fontSize, charArr, advanceArr, kerningArr, font,
@@ -181,7 +190,8 @@ export class KonvaIText extends Konva.Shape {
     this.selected = selected;
     this.fillBox = fillBox;
     this.dynamicWidth = dynamicWidth;
-    this.editTextCallback = editTextCallback;
+    this.changeTextCallback = changeTextCallback;
+    this.inputTextCallback = inputTextCallback;
 
     this.addEventListener('dblclick dbltap', (event) => {
       if (!KonvaIText.enableEditing) return;
@@ -400,6 +410,36 @@ export class KonvaIText extends Konva.Shape {
   };
 
   /**
+   * Set cursor position to `index` within the input.
+   * @param {number} index
+   */
+  static setCursor = (index) => {
+    if (!KonvaIText.input) {
+      console.error('Input element not found');
+      return;
+    }
+    const range = document.createRange();
+    const sel = /** @type {Selection} */ (window.getSelection());
+
+    let letterI = 0;
+    for (let i = 0; i < KonvaIText.input.childNodes.length; i++) {
+      const node = KonvaIText.input.childNodes[i];
+      const nodeLen = node.textContent?.length || 0;
+      if (letterI + nodeLen >= index) {
+        const textNode = node.nodeType === 3 ? node : node.childNodes[0];
+        // console.log(`Setting cursor to index ${index - letterI} in node ${i}`);
+        range.setStart(textNode, index - letterI);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        break;
+      } else {
+        letterI += nodeLen;
+      }
+    }
+  };
+
+  /**
    * Position and show the input for editing.
    * @param {KonvaIText} itext
    * @param {?number} cursorIndex - Index to position the cursor at. If `null`, position is determined by mouse location.
@@ -415,10 +455,12 @@ export class KonvaIText extends Konva.Shape {
     if (KonvaIText.inputRemove) KonvaIText.inputRemove();
 
     const inputElem = KonvaIText.itextToElem(itext);
-    inputElem.contentEditable = 'true';
+    inputElem.contentEditable = 'plaintext-only';
 
     KonvaIText.inputWord = itext;
     KonvaIText.input = inputElem;
+    KonvaIText.inputInnerHTMLLast = inputElem.innerHTML;
+    KonvaIText.inputCursorLast = letterIndex;
 
     const scale = layer.getAbsoluteScale().y;
 
@@ -426,22 +468,23 @@ export class KonvaIText extends Konva.Shape {
 
     const fontSizeHTMLSmallCaps = itext.fontSize * scale * fontI.smallCapsMult;
 
+    inputElem.onbeforeinput = () => {
+      const index = getInputCursorIndex();
+      KonvaIText.inputInnerHTMLLast = inputElem.innerHTML;
+      KonvaIText.inputCursorLast = index;
+    };
+
     if (itext.word.style.smallCaps) {
       inputElem.oninput = () => {
         const index = getInputCursorIndex();
         const textContent = inputElem.textContent || '';
         inputElem.innerHTML = KonvaIText.makeSmallCapsDivs(textContent, fontSizeHTMLSmallCaps);
-        setCursor(index);
+        KonvaIText.setCursor(index);
+        if (itext.inputTextCallback) itext.inputTextCallback(itext);
       };
     } else {
-      // When users copy/paste text, formatting is often copied as well.
-      // For example, copying contents of a low-conf word into a high-conf word will also copy the red color.
-      // This code removes any formatting from the pasted text.
       inputElem.oninput = () => {
-        const index = getInputCursorIndex();
-        // eslint-disable-next-line no-self-assign
-        inputElem.textContent = inputElem.textContent;
-        setCursor(index);
+        if (itext.inputTextCallback) itext.inputTextCallback(itext);
       };
     }
 
@@ -455,13 +498,15 @@ export class KonvaIText extends Konva.Shape {
       // Words are not allowed to be empty
       if (textNew) {
         itext.word.text = textNew;
-        itext.editTextCallback(itext);
+        if (itext.changeTextCallback) itext.changeTextCallback(itext);
       }
       KonvaIText.updateWordCanvas(itext);
       KonvaIText.input.remove();
       KonvaIText.input = null;
       KonvaIText.inputRemove = null;
       KonvaIText.inputWord = null;
+      KonvaIText.inputInnerHTMLLast = '';
+      KonvaIText.inputCursorLast = 0;
     };
 
     // Update the Konva Text node after editing
@@ -518,37 +563,7 @@ export class KonvaIText extends Konva.Shape {
       return index;
     };
 
-    /**
-     * Set cursor position to `index` within the input.
-     * @param {number} index
-     */
-    const setCursor = (index) => {
-      if (!KonvaIText.input) {
-        console.error('Input element not found');
-        return;
-      }
-      const range = document.createRange();
-      const sel = /** @type {Selection} */ (window.getSelection());
-
-      let letterI = 0;
-      for (let i = 0; i < KonvaIText.input.childNodes.length; i++) {
-        const node = KonvaIText.input.childNodes[i];
-        const nodeLen = node.textContent?.length || 0;
-        if (letterI + nodeLen >= index) {
-          const textNode = node.nodeType === 3 ? node : node.childNodes[0];
-          // console.log(`Setting cursor to index ${index - letterI} in node ${i}`);
-          range.setStart(textNode, index - letterI);
-          range.collapse(true);
-          sel.removeAllRanges();
-          sel.addRange(range);
-          break;
-        } else {
-          letterI += nodeLen;
-        }
-      }
-    };
-
-    setCursor(letterIndex);
+    KonvaIText.setCursor(letterIndex);
 
     // For reasons that are unclear, when using the enter key to add the input,
     // using `itext.draw()` does not clear the background text but `layerText.batchDraw` does.
@@ -591,7 +606,7 @@ export class KonvaOcrWord extends KonvaIText {
       fillBox,
       opacity,
       fill,
-      editTextCallback: () => {},
+      changeTextCallback: () => {},
     });
 
     this.listening(listening);
