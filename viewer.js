@@ -1535,7 +1535,10 @@ function renderCanvasWords(page) {
   const imageRotated = Math.abs(angle ?? 0) > 0.05;
 
   if (optViewer.outlinePars && page) {
-    scribe.utils.assignParagraphs(page, angle);
+    // Do not overwrite paragraphs from Abbyy or Textract.
+    if (!page.textSource || !['textract', 'abbyy'].includes(page.textSource)) {
+      scribe.utils.assignParagraphs(page, angle);
+    }
 
     page.pars.forEach((par) => {
       const angleAdj = imageRotated ? scribe.utils.ocr.calcLineStartAngleAdj(par.lines[0]) : { x: 0, y: 0 };
