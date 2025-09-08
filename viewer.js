@@ -1535,8 +1535,8 @@ function renderCanvasWords(page) {
   const imageRotated = Math.abs(angle ?? 0) > 0.05;
 
   if (optViewer.outlinePars && page) {
-    // Do not overwrite paragraphs from Abbyy or Textract.
-    if (!page.textSource || !['textract', 'abbyy'].includes(page.textSource)) {
+    // Do not overwrite paragraphs from programs with more advanced layout analysis.
+    if (!page.textSource || !['textract', 'abbyy', 'google_vision'].includes(page.textSource)) {
       scribe.utils.assignParagraphs(page, angle);
     }
 
