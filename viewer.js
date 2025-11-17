@@ -898,8 +898,6 @@ export class ScribeViewer {
       return;
     }
 
-    if (ScribeViewer.runSetInitial) ScribeViewer.setInitialPositionZoom(scribe.data.pageMetrics[n].dims);
-
     if (scribe.inputData.evalMode) {
       await compareGroundTruth();
       // ocrData must be re-assigned after comparing to ground truth or it will not update.
@@ -925,6 +923,10 @@ export class ScribeViewer {
       // elem.nav.pageNum.value = (stateGUI.cp.n + 1).toString();
       if (ScribeViewer.displayPageCallback) ScribeViewer.displayPageCallback();
       return;
+    }
+
+    if (ScribeViewer.runSetInitial) {
+      ScribeViewer.setInitialPositionZoom(scribe.data.pageMetrics[n].dims);
     }
 
     ScribeViewer.deleteHTMLOverlay();

@@ -111,7 +111,7 @@ export class ViewerImageCache {
   static getKonvaImage = async (n) => {
     const pageDims = scribe.data.pageMetrics[n].dims;
 
-    const backgroundImage = scribe.opt.colorMode === 'binary' ? await scribe.data.image.getBinary(n) : await scribe.data.image.getNative(n);
+    const backgroundImage = scribe.opt.colorMode === 'binary' ? await scribe.data.image.getBinary(n, undefined, true) : await scribe.data.image.getNative(n, undefined, true);
     const image = scribe.opt.colorMode === 'binary' ? await ViewerImageCache.getBinaryBitmap(n) : await ViewerImageCache.getNativeBitmap(n);
 
     let rotation = 0;
@@ -162,7 +162,7 @@ export class ViewerImageCache {
    *  Image properties should only be defined if needed, as they can require the image to be re-rendered.
    */
   static getNativeBitmap = async (n, props) => {
-    const nativeN = await scribe.data.image.getNative(n, props);
+    const nativeN = await scribe.data.image.getNative(n, props, true);
     if (ViewerImageCache.#nativeBitmapPromises[n]) await ViewerImageCache.#nativeBitmapPromises[n];
     if (!nativeN.imageBitmap) {
       const bitmapPromise = ViewerImageCache.imageStrToBitmap(nativeN.src);
@@ -180,7 +180,7 @@ export class ViewerImageCache {
    *  Image properties should only be defined if needed, as they can require the image to be re-rendered.
    */
   static getBinaryBitmap = async (n, props) => {
-    const binaryN = await scribe.data.image.getBinary(n, props);
+    const binaryN = await scribe.data.image.getBinary(n, props, true);
     if (ViewerImageCache.#binaryBitmapPromises[n]) await ViewerImageCache.#binaryBitmapPromises[n];
     if (!binaryN.imageBitmap) {
       const bitmapPromise = ViewerImageCache.imageStrToBitmap(binaryN.src);
