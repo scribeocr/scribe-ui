@@ -104,7 +104,7 @@ export class KonvaLayout extends Konva.Rect {
       const lineObjTemp = new scribe.utils.ocr.OcrLine(pageObj, box, [0, 0], 10, null);
       pageObj.lines = [lineObjTemp];
       const wordIDNew = scribe.utils.getRandomAlphanum(10);
-      const wordObj = new scribe.utils.ocr.OcrWord(lineObjTemp, String(layoutBox.order), box, wordIDNew);
+      const wordObj = new scribe.utils.ocr.OcrWord(lineObjTemp, wordIDNew, String(layoutBox.order), box);
       wordObj.visualCoords = false;
       wordObj.style.size = 50;
       const label = new KonvaIText({

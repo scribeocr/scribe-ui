@@ -32,6 +32,11 @@ async function recognizeArea(n, box, wordMode = false) {
   // Return early if the rectangle is too small to be a word.
   if (box.width < 4 || box.height < 4) return;
 
+  if (!scribe.data.ocr.active[n]) {
+    console.error('Base text layer must exist prior to recognizing area.');
+    return;
+  }
+
   const imageCoords = { ...box };
 
   const legacy = true;
