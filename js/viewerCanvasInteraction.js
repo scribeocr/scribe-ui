@@ -168,7 +168,7 @@ async function addWordManual(n, box) {
   const lineObjTemp = new scribe.utils.ocr.OcrLine(pageObj, wordBox, [0, 0], 10, null);
   pageObj.lines = [lineObjTemp];
   const wordIDNew = scribe.utils.getRandomAlphanum(10);
-  const wordObj = new scribe.utils.ocr.OcrWord(lineObjTemp, wordText, wordBox, wordIDNew);
+  const wordObj = new scribe.utils.ocr.OcrWord(lineObjTemp, wordIDNew, wordText, wordBox);
   // Words added by user are assumed to be correct.
   wordObj.conf = 100;
   lineObjTemp.words = [wordObj];
