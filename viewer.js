@@ -1538,7 +1538,7 @@ function renderCanvasWords(page) {
 
   if (optViewer.outlinePars && page) {
     // Do not overwrite paragraphs from programs with more advanced layout analysis.
-    if (!page.textSource || !['textract', 'abbyy', 'google_vision', 'azure_doc_intel'].includes(page.textSource)) {
+    if (!page.textSource || !['textract', 'abbyy', 'google_vision', 'azure_doc_intel', 'docx'].includes(page.textSource)) {
       scribe.utils.assignParagraphs(page, angle);
     }
 

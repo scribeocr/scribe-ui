@@ -73,8 +73,8 @@ export class ViewerImageCache {
    * @returns
    */
   static #initBitmapScheduler = async (numWorkers = 3) => {
-    const Tesseract = (await import('../scribe.js/tess/tesseract.esm.min.js')).default;
-    const scheduler = await Tesseract.createScheduler();
+    const { createScheduler } = await import('../scribe.js/tesseract.js/src/index.js');
+    const scheduler = await createScheduler();
     const workersPromiseArr = range(1, numWorkers).map(async () => {
       const w = await initBitmapWorker();
       w.id = `png-${Math.random().toString(16).slice(3, 8)}`;
