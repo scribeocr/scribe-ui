@@ -295,6 +295,22 @@ export class KonvaIText extends Konva.Shape {
 
     wordI.fontSize = fontSize;
     wordI.height(fontSize * 0.6);
+
+    if (wordI.word.style.sup || wordI.word.style.dropcap) {
+      const lineObj = wordI.word.line;
+      wordI.yActual = wordI.topBaseline + (wordI.word.bbox.bottom - lineObj.bbox.bottom - lineObj.baseline[1]);
+    } else {
+      wordI.yActual = wordI.topBaseline;
+    }
+
+    let y = wordI.yActual - fontSize * 0.6;
+    if (!wordI.word.visualCoords && (wordI.word.style.sup || wordI.word.style.dropcap)) {
+      const fontI = scribe.data.font.getWordFont(wordI.word);
+      const fontDesc = fontI.opentype.descender / fontI.opentype.unitsPerEm * fontSize;
+      y = wordI.yActual - fontSize * 0.6 + fontDesc;
+    }
+    wordI.setAttr('y', y);
+
     wordI.show();
 
     // Test `wordI.parent` to avoid race condition where `wordI` is destroyed before this function completes.
