@@ -398,7 +398,7 @@ export class KonvaIText extends Konva.Shape {
       inputElem.style.opacity = String(opacity);
     }
 
-    if (itext.word.style.underline) {
+    if (itext.word.style.underline && opacity !== 0) {
       const underlineThickness = itext.word.style.bold ? Math.ceil(fontSizeHTML / 12) : Math.ceil(fontSizeHTML / 24);
       const underlineOffset = Math.ceil(fontSizeHTML / 12) + Math.ceil(fontSizeHTML / 24) / 2;
       inputElem.style.textDecoration = 'underline';
