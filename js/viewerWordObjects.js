@@ -41,10 +41,15 @@ export class KonvaIText extends Konva.Shape {
    *    This is used for dummy text boxes that are not tied to OCR, however should be `false` for OCR text boxes.
    * @param {Function} [options.changeTextCallback] - Optional callback function that is called when the text is edited and the input loses focus.
    * @param {Function} [options.inputTextCallback] - Optional callback function that is called when a keystroke modifies the value of the text input.
+   * @param {?string} [options.highlightColor=null] - Highlight background color (hex string like '#ffff00'), or null for no highlight.
+   * @param {number} [options.highlightOpacity=1] - Opacity for the highlight background (0-1).
+   * @param {?string} [options.highlightGroupId=null] - Group ID linking annotations in the same highlight group.
+   * @param {string} [options.highlightComment=''] - Comment text attached to this highlight group.
    */
   constructor({
     x, yActual, word, rotation = 0,
     outline = false, selected = false, fillBox = false, opacity = 1, fill = 'black', dynamicWidth = false, changeTextCallback, inputTextCallback,
+    highlightColor = null, highlightOpacity = 1, highlightGroupId = null, highlightComment = '',
   }) {
     const {
       charSpacing, leftSideBearing, rightSideBearing, fontSize, charArr, advanceArr, kerningArr, font,
@@ -96,6 +101,16 @@ export class KonvaIText extends Konva.Shape {
        */
       // @ts-ignore
       sceneFunc: (context, shape) => {
+        if (shape.highlightColor) {
+          context.save();
+          context.globalAlpha = shape.highlightOpacity;
+          context.fillStyle = shape.highlightColor;
+          const pad = shape.height() * 0.2;
+          context.fillRect(-shape.highlightGapLeft, -pad,
+            shape.width() + shape.highlightGapLeft + shape.highlightGapRight, shape.height() + pad * 2);
+          context.restore();
+        }
+
         context.font = `${shape.fontFaceStyle} ${shape.fontFaceWeight} ${shape.fontSize}px ${shape.fontFaceName}`;
         context.textBaseline = 'alphabetic';
         context.fillStyle = shape.fill();
@@ -189,6 +204,12 @@ export class KonvaIText extends Konva.Shape {
     this.outline = outline;
     this.selected = selected;
     this.fillBox = fillBox;
+    this.highlightColor = highlightColor;
+    this.highlightOpacity = highlightOpacity;
+    this.highlightGroupId = highlightGroupId;
+    this.highlightComment = highlightComment;
+    this.highlightGapLeft = 0;
+    this.highlightGapRight = 0;
     this.dynamicWidth = dynamicWidth;
     this.changeTextCallback = changeTextCallback;
     this.inputTextCallback = inputTextCallback;
@@ -407,6 +428,21 @@ export class KonvaIText extends Konva.Shape {
       inputElem.style.textUnderlineOffset = `${underlineOffset}px`;
     }
 
+    if (itext.highlightColor) {
+      const r = parseInt(itext.highlightColor.slice(1, 3), 16);
+      const g = parseInt(itext.highlightColor.slice(3, 5), 16);
+      const b = parseInt(itext.highlightColor.slice(5, 7), 16);
+      const color = `rgba(${r}, ${g}, ${b}, ${itext.highlightOpacity})`;
+      // Match canvas highlight dimensions: height = fontSize*0.6 + 2*(fontSize*0.6*0.2) = fontSize*0.84
+      const highlightHeight = fontSizeHTML * 0.84;
+      const highlightTop = metrics.fontBoundingBoxAscent - fontSizeHTML * 0.72;
+      inputElem.style.backgroundImage = `linear-gradient(${color}, ${color})`;
+      inputElem.style.backgroundSize = `100% ${highlightHeight}px`;
+      inputElem.style.backgroundPosition = `0 ${highlightTop}px`;
+      inputElem.style.backgroundRepeat = 'no-repeat';
+      inputElem.style.backgroundOrigin = 'content-box';
+    }
+
     inputElem.style.fontStyle = itext.fontFaceStyle;
     inputElem.style.fontWeight = itext.fontFaceWeight;
     // Line height must match the height of the font bounding box for the font metrics to be accurate.
@@ -603,10 +639,15 @@ export class KonvaOcrWord extends KonvaIText {
    * @param {boolean} options.outline - Draw black outline around text.
    * @param {boolean} options.fillBox
    * @param {boolean} options.listening
+   * @param {?string} [options.highlightColor=null]
+   * @param {number} [options.highlightOpacity=1]
+   * @param {?string} [options.highlightGroupId=null]
+   * @param {string} [options.highlightComment='']
    */
   constructor({
     visualLeft, yActual, topBaseline, word, rotation,
-    outline, fillBox, listening,
+    outline, fillBox, listening, highlightColor = null, highlightOpacity = 1,
+    highlightGroupId = null, highlightComment = '',
   }) {
     // const { fill, opacity } = getWordFillOpacityGUI(word);
     const { fill, opacity } = scribe.utils.ocr.getWordFillOpacity(word, scribe.opt.displayMode,
@@ -622,6 +663,10 @@ export class KonvaOcrWord extends KonvaIText {
       fillBox,
       opacity,
       fill,
+      highlightColor,
+      highlightOpacity,
+      highlightGroupId,
+      highlightComment,
       changeTextCallback: () => {},
     });
 

@@ -282,6 +282,12 @@ const createContextMenuHTML = () => {
   splitTableButton.style.display = 'none';
   splitTableButton.addEventListener('click', splitDataTableClick);
 
+  const deleteHighlightButton = document.createElement('button');
+  deleteHighlightButton.id = 'contextMenuDeleteHighlightButton';
+  deleteHighlightButton.textContent = 'Delete Highlight';
+  deleteHighlightButton.style.display = 'none';
+  deleteHighlightButton.addEventListener('click', deleteHighlightClick);
+
   innerDiv.appendChild(deleteWordsButton);
   innerDiv.appendChild(splitWordButton);
   innerDiv.appendChild(mergeWordsButton);
@@ -292,6 +298,7 @@ const createContextMenuHTML = () => {
   innerDiv.appendChild(copyTableContentsButton);
   innerDiv.appendChild(mergeTablesButton);
   innerDiv.appendChild(splitTableButton);
+  innerDiv.appendChild(deleteHighlightButton);
 
   menuDiv.appendChild(innerDiv);
 
@@ -396,6 +403,48 @@ const splitDataTableClick = () => {
   ScribeViewer.destroyControls();
 };
 
+const deleteHighlightClick = () => {
+  hideContextMenu();
+
+  const konvaWord = ScribeViewer.contextMenuWord;
+  if (!konvaWord || !konvaWord.highlightColor) return;
+
+  const n = ScribeViewer.state.cp.n;
+  const wb = konvaWord.word.bbox;
+  const pageAnnotations = scribe.data.annotations.pages[n];
+
+  // Find the annotation matching this word
+  let matchingAnnot = null;
+  for (const annot of pageAnnotations) {
+    if (!(annot.bbox.left <= wb.left && annot.bbox.right >= wb.right
+      && annot.bbox.top <= wb.top && annot.bbox.bottom >= wb.bottom)) continue;
+    if (annot.quads) {
+      const matchesQuad = annot.quads.some((quad) => quad.left < wb.right && quad.right > wb.left
+        && quad.top < wb.bottom && quad.bottom > wb.top);
+      if (!matchesQuad) continue;
+    }
+    matchingAnnot = annot;
+    break;
+  }
+  if (!matchingAnnot) return;
+
+  // Remove the entire annotation (all entries sharing the same groupId)
+  scribe.data.annotations.pages[n] = pageAnnotations.filter((annot) => annot.groupId !== matchingAnnot.groupId);
+  for (const kw of ScribeViewer.getKonvaWords()) {
+    if (kw.highlightGroupId === matchingAnnot.groupId) {
+      kw.highlightColor = null;
+      kw.highlightOpacity = 1;
+      kw.highlightGroupId = null;
+      kw.highlightComment = '';
+      kw.highlightGapLeft = 0;
+      kw.highlightGapRight = 0;
+    }
+  }
+
+  if (ScribeViewer.KonvaOcrWord.updateUI) ScribeViewer.KonvaOcrWord.updateUI();
+  ScribeViewer.layerText.batchDraw();
+};
+
 const deleteWordsClick = () => {
   hideContextMenu();
   deleteSelectedWord();
@@ -415,6 +464,7 @@ const contextMenuDeleteLayoutTableButtonElem = /** @type {HTMLButtonElement} */(
 const contextMenuCopyLayoutTableContentsButtonElem = /** @type {HTMLButtonElement} */(document.getElementById('contextMenuCopyLayoutTableContentsButton'));
 const contextMenuMergeTablesButtonElem = /** @type {HTMLButtonElement} */(document.getElementById('contextMenuMergeTablesButton'));
 const contextMenuSplitTableButtonElem = /** @type {HTMLButtonElement} */(document.getElementById('contextMenuSplitTableButton'));
+const contextMenuDeleteHighlightButtonElem = /** @type {HTMLButtonElement} */(document.getElementById('contextMenuDeleteHighlightButton'));
 
 export const hideContextMenu = () => {
   contextMenuMergeWordsButtonElem.style.display = 'none';
@@ -427,6 +477,7 @@ export const hideContextMenu = () => {
   contextMenuCopyLayoutTableContentsButtonElem.style.display = 'none';
   contextMenuMergeTablesButtonElem.style.display = 'none';
   contextMenuSplitTableButtonElem.style.display = 'none';
+  contextMenuDeleteHighlightButtonElem.style.display = 'none';
   menuNode.style.display = 'none';
 };
 
@@ -473,12 +524,14 @@ export const contextMenuFunc = (event) => {
   let enableSplitWord = false;
   let enableMergeWords = false;
   let enableDeleteWords = false;
+  let enableDeleteHighlight = false;
   if (!ScribeViewer.state.layoutMode && selectedKonvaWords.length > 0) enableDeleteWords = true;
   if (!ScribeViewer.state.layoutMode && event.target instanceof KonvaOcrWord) {
+    ScribeViewer.contextMenuWord = event.target;
+    if (event.target.highlightColor) enableDeleteHighlight = true;
     if (selectedKonvaWords.length < 2) {
       const cursorIndex = KonvaOcrWord.getCursorIndex(event.target);
       if (cursorIndex > 0 && cursorIndex < event.target.word.text.length) {
-        ScribeViewer.contextMenuWord = event.target;
         enableSplitWord = true;
       }
     } else {
@@ -515,7 +568,7 @@ export const contextMenuFunc = (event) => {
   }
 
   if (!(enableMergeColumns || enableSplit || enableDeleteRegion || enableDeleteTable || enableCopyTableContents || enableMergeTables || enableSplitTable
-    || enableSplitWord || enableMergeWords || enableDeleteWords)) return;
+    || enableSplitWord || enableMergeWords || enableDeleteWords || enableDeleteHighlight)) return;
 
   if (enableMergeWords) {
     contextMenuMergeWordsButtonElem.style.display = 'initial';
@@ -549,6 +602,9 @@ export const contextMenuFunc = (event) => {
   }
   if (enableSplitTable) {
     contextMenuSplitTableButtonElem.style.display = 'initial';
+  }
+  if (enableDeleteHighlight) {
+    contextMenuDeleteHighlightButtonElem.style.display = 'initial';
   }
 
   event.evt.preventDefault();

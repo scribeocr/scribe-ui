@@ -1484,9 +1484,10 @@ async function compareGroundTruth() {
  * @param {number} n
  * @param {bbox} box
  * @param {{x: number, y: number}} angleAdj
+ * @param {number} index
  * @param {string} [label]
  */
-const addBlockOutline = (n, box, angleAdj, label) => {
+const addBlockOutline = (n, box, angleAdj, index, label) => {
   const height = box.bottom - box.top;
 
   const group = ScribeViewer.getTextGroup(n);
@@ -1502,22 +1503,55 @@ const addBlockOutline = (n, box, angleAdj, label) => {
     listening: false,
   });
 
+  const indexStr = String(index);
+  const badgeObj = new Konva.Shape({
+    x: box.left + angleAdj.x,
+    y: box.top + angleAdj.y,
+    sceneFunc: (context, shape) => {
+      const scale = shape.getAbsoluteScale().x;
+      const screenRadius = Math.min(18, Math.max(12, 12 * scale));
+      const radius = screenRadius / scale;
+      const cx = -radius - 4 / scale;
+      const cy = radius;
+
+      context.beginPath();
+      context.arc(cx, cy, radius, 0, 2 * Math.PI);
+      context.fillStyle = 'rgba(0, 100, 200, 0.85)';
+      context.fill();
+
+      const fontSize = radius * 1.2;
+      context.font = `bold ${fontSize}px Arial`;
+      context.fillStyle = '#fff';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(indexStr, cx, cy);
+    },
+    draggable: false,
+    listening: false,
+  });
+
+  group.add(blockRect);
+  group.add(badgeObj);
+
   if (label) {
-    const labelObj = new Konva.Text({
+    const reasonObj = new Konva.Shape({
       x: box.left + angleAdj.x,
       y: box.top + angleAdj.y,
-      text: label,
-      fontSize: 12,
-      fontFamily: 'Arial',
-      fill: 'rgba(0,0,255,0.75)',
+      sceneFunc: (context, shape) => {
+        const scale = shape.getAbsoluteScale().x;
+        const screenSize = Math.min(20, Math.max(10, 10 * scale));
+        const fontSize = screenSize / scale;
+        context.font = `${fontSize}px Arial`;
+        context.fillStyle = 'rgba(0,0,255,0.75)';
+        context.textBaseline = 'top';
+        context.fillText(label, 0, 0);
+      },
       draggable: false,
       listening: false,
     });
 
-    group.add(labelObj);
+    group.add(reasonObj);
   }
-
-  group.add(blockRect);
 };
 
 /**
@@ -1536,15 +1570,17 @@ function renderCanvasWords(page) {
 
   const imageRotated = Math.abs(angle ?? 0) > 0.05;
 
+  const pageAnnotations = scribe.data.annotations.pages[page.n] || [];
+
   if (optViewer.outlinePars && page) {
     // Do not overwrite paragraphs from programs with more advanced layout analysis.
     if (!page.textSource || !['textract', 'abbyy', 'google_vision', 'azure_doc_intel', 'docx'].includes(page.textSource)) {
       scribe.utils.assignParagraphs(page, angle);
     }
 
-    page.pars.forEach((par) => {
+    page.pars.forEach((par, i) => {
       const angleAdj = imageRotated ? scribe.utils.ocr.calcLineStartAngleAdj(par.lines[0]) : { x: 0, y: 0 };
-      addBlockOutline(page.n, par.bbox, angleAdj, par.reason);
+      addBlockOutline(page.n, par.bbox, angleAdj, i + 1, par.reason);
     });
   }
 
@@ -1575,6 +1611,8 @@ function renderCanvasWords(page) {
       group.add(lineRect);
     }
 
+    /** @type {KonvaOcrWord|null} */
+    let prevWordCanvas = null;
     for (const wordObj of lineObj.words) {
       if (!wordObj.text) continue;
 
@@ -1589,6 +1627,28 @@ function renderCanvasWords(page) {
 
       const visualLeft = wordObj.bbox.left + angleAdjLine.x + angleAdjWord.x;
 
+      // Check if word falls within a highlight annotation
+      let highlightColor = null;
+      let highlightOpacity = 1;
+      let highlightGroupId = null;
+      let highlightComment = '';
+      for (const annot of pageAnnotations) {
+        if (!(annot.bbox.left <= wordObj.bbox.left && annot.bbox.right >= wordObj.bbox.right
+          && annot.bbox.top <= wordObj.bbox.top && annot.bbox.bottom >= wordObj.bbox.bottom)) continue;
+
+        if (annot.quads) {
+          const matchesQuad = annot.quads.some((quad) => quad.left < wordObj.bbox.right && quad.right > wordObj.bbox.left
+            && quad.top < wordObj.bbox.bottom && quad.bottom > wordObj.bbox.top);
+          if (!matchesQuad) continue;
+        }
+
+        highlightColor = annot.color;
+        highlightOpacity = annot.opacity;
+        highlightGroupId = annot.groupId || null;
+        highlightComment = annot.comment || '';
+        break;
+      }
+
       const wordCanvas = new KonvaOcrWord({
         visualLeft,
         yActual: top,
@@ -1597,9 +1657,22 @@ function renderCanvasWords(page) {
         word: wordObj,
         outline: outlineWord,
         fillBox: matchIdArr.includes(wordObj.id),
+        highlightColor,
+        highlightOpacity,
+        highlightGroupId,
+        highlightComment,
         listening: !stateViewer.layoutMode,
       });
 
+      // Compute gap extensions for adjacent highlighted words.
+      if (wordCanvas.highlightColor && prevWordCanvas && prevWordCanvas.highlightColor
+        && wordCanvas.highlightGroupId && wordCanvas.highlightGroupId === prevWordCanvas.highlightGroupId) {
+        const gap = (wordCanvas.x() - (prevWordCanvas.x() + prevWordCanvas.width())) / 2;
+        wordCanvas.highlightGapLeft = gap;
+        prevWordCanvas.highlightGapRight = gap;
+      }
+
+      prevWordCanvas = wordCanvas;
       group.add(wordCanvas);
     }
   }

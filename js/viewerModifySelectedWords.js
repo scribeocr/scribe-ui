@@ -24,8 +24,8 @@ export function deleteSelectedWord() {
 
   ScribeViewer.layerText.batchDraw();
 
-  // Re-render the page if the user has selected the option to outline lines to update the line boxes.
-  if (ScribeViewer.opt.outlineLines) ScribeViewer.displayPage(ScribeViewer.state.cp.n);
+  // Re-render the page if the user has selected the option to outline lines/pars to update the boxes.
+  if (ScribeViewer.opt.outlineLines || ScribeViewer.opt.outlinePars) ScribeViewer.displayPage(ScribeViewer.state.cp.n);
 }
 
 /**
