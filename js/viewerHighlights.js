@@ -28,7 +28,7 @@ export function annotMatchesWord(annot, wb) {
  * Draws outline rectangles around all words in the same highlight group as the selected word.
  * Clears any previous outlines first.
  */
-function updateHighlightGroupOutline() {
+export function updateHighlightGroupOutline() {
   // Remove existing outlines
   for (const rect of highlightOutlineRects) rect.destroy();
   highlightOutlineRects.length = 0;
@@ -53,40 +53,50 @@ function updateHighlightGroupOutline() {
     return;
   }
 
-  const lineMap = new Map();
+  // Group words by page, then by line within each page
+  const pageMap = new Map();
   for (const kw of groupWords) {
-    const lineId = kw.word.line.id;
-    if (!lineMap.has(lineId)) lineMap.set(lineId, []);
-    lineMap.get(lineId).push(kw);
+    const pageN = kw.word.line.page.n;
+    if (!pageMap.has(pageN)) pageMap.set(pageN, []);
+    pageMap.get(pageN).push(kw);
   }
 
-  const n = ScribeViewer.state.cp.n;
-  const group = ScribeViewer.getTextGroup(n);
-  const pad = groupWords[0].height() * 0.2;
+  const scale = ScribeViewer.layerText.getAbsoluteScale()?.x || 1;
 
-  for (const lineWords of lineMap.values()) {
-    lineWords.sort((a, b) => a.x() - b.x());
-    const first = lineWords[0];
-    const last = lineWords[lineWords.length - 1];
-    const left = first.x() - first.highlightGapLeft;
-    const right = last.x() + last.width() + last.highlightGapRight;
-    const top = first.y() - pad;
-    const height = first.height() + pad * 2;
+  for (const [pageN, pageWords] of pageMap) {
+    const lineMap = new Map();
+    for (const kw of pageWords) {
+      const lineId = kw.word.line.id;
+      if (!lineMap.has(lineId)) lineMap.set(lineId, []);
+      lineMap.get(lineId).push(kw);
+    }
 
-    const scale = ScribeViewer.layerText.getAbsoluteScale()?.x || 1;
-    const rect = new Konva.Rect({
-      x: left,
-      y: top,
-      width: right - left,
-      height,
-      stroke: 'rgba(40,123,181,0.8)',
-      strokeWidth: 2 / scale,
-      dash: [8 / scale, 5 / scale],
-      draggable: false,
-      listening: false,
-    });
-    group.add(rect);
-    highlightOutlineRects.push(rect);
+    const group = ScribeViewer.getTextGroup(pageN);
+    const pad = pageWords[0].height() * 0.2;
+
+    for (const lineWords of lineMap.values()) {
+      lineWords.sort((a, b) => a.x() - b.x());
+      const first = lineWords[0];
+      const last = lineWords[lineWords.length - 1];
+      const left = first.x() - first.highlightGapLeft;
+      const right = last.x() + last.width() + last.highlightGapRight;
+      const top = first.y() - pad;
+      const height = first.height() + pad * 2;
+
+      const rect = new Konva.Rect({
+        x: left,
+        y: top,
+        width: right - left,
+        height,
+        stroke: 'rgba(40,123,181,0.8)',
+        strokeWidth: 2 / scale,
+        dash: [8 / scale, 5 / scale],
+        draggable: false,
+        listening: false,
+      });
+      group.add(rect);
+      highlightOutlineRects.push(rect);
+    }
   }
 
   ScribeViewer.layerText.batchDraw();

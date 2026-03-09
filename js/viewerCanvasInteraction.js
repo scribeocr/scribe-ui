@@ -12,7 +12,7 @@ import {
 import { KonvaOcrWord } from './viewerWordObjects.js';
 import { deleteSelectedWord } from './viewerModifySelectedWords.js';
 import { deleteSelectedLayoutDataTable, deleteSelectedLayoutRegion } from './viewerModifySelectedLayout.js';
-import { annotMatchesWord } from './viewerHighlights.js';
+import { annotMatchesWord, updateHighlightGroupOutline } from './viewerHighlights.js';
 
 /**
  * Recognize area selected by user in Tesseract.
@@ -410,7 +410,7 @@ const deleteHighlightClick = () => {
   const konvaWord = ScribeViewer.contextMenuWord;
   if (!konvaWord || !konvaWord.highlightColor) return;
 
-  const n = ScribeViewer.state.cp.n;
+  const n = konvaWord.word.line.page.n;
   const wb = konvaWord.word.bbox;
   const pageAnnotations = scribe.data.annotations.pages[n];
 
@@ -431,6 +431,7 @@ const deleteHighlightClick = () => {
     }
   }
 
+  updateHighlightGroupOutline();
   if (ScribeViewer.KonvaOcrWord.updateUI) ScribeViewer.KonvaOcrWord.updateUI();
   ScribeViewer.layerText.batchDraw();
 };
@@ -684,6 +685,7 @@ export const mouseupFunc2 = (event) => {
       ScribeViewer.destroyControls(!event.evt.ctrlKey);
       selectWords(box);
       KonvaOcrWord.updateUI();
+      updateHighlightGroupOutline();
       ScribeViewer.layerText.batchDraw();
     } else if (ScribeViewer.mode === 'select' && ScribeViewer.state.layoutMode) {
       ScribeViewer.destroyControls(!event.evt.ctrlKey);
@@ -702,6 +704,7 @@ export const mouseupFunc2 = (event) => {
     const box = ScribeViewer.selectingRectangle.getClientRect();
     selectWords(box);
     KonvaOcrWord.updateUI();
+    updateHighlightGroupOutline();
   } else if (ScribeViewer.mode === 'select' && ScribeViewer.state.layoutMode) {
     ScribeViewer.destroyControls(!event.evt.ctrlKey);
     const box = ScribeViewer.selectingRectangle.getClientRect();
