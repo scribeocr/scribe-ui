@@ -428,7 +428,7 @@ export class KonvaIText extends Konva.Shape {
       inputElem.style.textUnderlineOffset = `${underlineOffset}px`;
     }
 
-    if (itext.highlightColor) {
+    if (itext.highlightColor && scribe.opt.displayMode !== 'invis' && scribe.opt.displayMode !== 'annot') {
       const r = parseInt(itext.highlightColor.slice(1, 3), 16);
       const g = parseInt(itext.highlightColor.slice(3, 5), 16);
       const b = parseInt(itext.highlightColor.slice(5, 7), 16);
