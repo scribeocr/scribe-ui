@@ -12,6 +12,7 @@ import {
 import { KonvaOcrWord } from './viewerWordObjects.js';
 import { deleteSelectedWord } from './viewerModifySelectedWords.js';
 import { deleteSelectedLayoutDataTable, deleteSelectedLayoutRegion } from './viewerModifySelectedLayout.js';
+import { annotMatchesWord } from './viewerHighlights.js';
 
 /**
  * Recognize area selected by user in Tesseract.
@@ -414,18 +415,7 @@ const deleteHighlightClick = () => {
   const pageAnnotations = scribe.data.annotations.pages[n];
 
   // Find the annotation matching this word
-  let matchingAnnot = null;
-  for (const annot of pageAnnotations) {
-    if (!(annot.bbox.left <= wb.left && annot.bbox.right >= wb.right
-      && annot.bbox.top <= wb.top && annot.bbox.bottom >= wb.bottom)) continue;
-    if (annot.quads) {
-      const matchesQuad = annot.quads.some((quad) => quad.left < wb.right && quad.right > wb.left
-        && quad.top < wb.bottom && quad.bottom > wb.top);
-      if (!matchesQuad) continue;
-    }
-    matchingAnnot = annot;
-    break;
-  }
+  const matchingAnnot = pageAnnotations.find((annot) => annotMatchesWord(annot, wb));
   if (!matchingAnnot) return;
 
   // Remove the entire annotation (all entries sharing the same groupId)

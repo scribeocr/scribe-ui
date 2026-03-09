@@ -15,6 +15,7 @@ import {
 } from './js/viewerModifySelectedWords.js';
 import { getAllFileEntries } from './js/dragAndDrop.js';
 import { deleteSelectedLayoutDataTable, deleteSelectedLayoutRegion } from './js/viewerModifySelectedLayout.js';
+import { applyHighlight, removeHighlight, modifyHighlightComment } from './js/viewerHighlights.js';
 
 Konva.autoDrawEnabled = false;
 Konva.dragButtons = [0];
@@ -263,6 +264,12 @@ class CanvasSelection {
   static deleteSelectedLayoutDataTable = deleteSelectedLayoutDataTable;
 
   static deleteSelectedLayoutRegion = deleteSelectedLayoutRegion;
+
+  static applyHighlight = applyHighlight;
+
+  static removeHighlight = removeHighlight;
+
+  static modifyHighlightComment = modifyHighlightComment;
 }
 
 function getCenter(p1, p2) {
