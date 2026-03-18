@@ -20,3 +20,6 @@ results
 *.traineddata.gz
 settings.json
 tmp
+basic-viewer/tauri/target/
+basic-viewer/tauri/dist/
+basic-viewer/tauri/gen/

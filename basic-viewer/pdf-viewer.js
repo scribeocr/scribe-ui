@@ -19,26 +19,28 @@ class ScribePDFViewer {
 
     // Create toolbar div
     const toolbarHeight = 56;
-    const toolbar = document.createElement('div');
-    toolbar.style.width = '100%';
-    toolbar.style.height = `${toolbarHeight}px`;
+    this.toolbarElem = document.createElement('div');
+    this.toolbarElem.style.width = '100%';
+    this.toolbarElem.style.height = `${toolbarHeight}px`;
 
-    toolbar.style.alignItems = 'center';
-    toolbar.style.color = '#fff';
-    toolbar.style.display = 'flex';
-    toolbar.style.position = 'relative';
-    toolbar.style.zIndex = '10';
-    toolbar.style.lineHeight = '32px';
-    toolbar.style.backgroundColor = '#323639';
-
+    this.toolbarElem.style.alignItems = 'center';
+    this.toolbarElem.style.color = '#fff';
+    this.toolbarElem.style.display = 'flex';
+    this.toolbarElem.style.position = 'relative';
+    this.toolbarElem.style.zIndex = '10';
+    this.toolbarElem.style.lineHeight = '32px';
+    this.toolbarElem.style.backgroundColor = '#323639';
     // Start, Center, and End containers
-    const start = document.createElement('div');
-    start.style.flex = '1';
+    this.toolbarElemStart = document.createElement('div');
+    this.toolbarElemStart.style.flex = '1';
 
     const center = document.createElement('div');
 
-    const end = document.createElement('div');
-    end.style.flex = '1';
+    this.toolbarElemEnd = document.createElement('div');
+    this.toolbarElemEnd.style.flex = '1';
+    this.toolbarElemEnd.style.display = 'flex';
+    this.toolbarElemEnd.style.justifyContent = 'flex-end';
+    this.toolbarElemEnd.style.alignItems = 'center';
 
     // Toolbar buttons container
     const toolbarButtons = document.createElement('div');
@@ -173,6 +175,7 @@ class ScribePDFViewer {
 
     this.highlightElem.appendChild(highlightIcon);
 
+    this.highlightElem.addEventListener('mousedown', (e) => e.preventDefault());
     this.highlightElem.addEventListener('click', () => {
       this.highlightMode = !this.highlightMode;
       this.highlightElem.classList.toggle('active', this.highlightMode);
@@ -193,12 +196,22 @@ class ScribePDFViewer {
       btn.className = 'highlight-color-btn';
       btn.style.backgroundColor = color;
       if (color === this.highlightColor) btn.classList.add('active');
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
       btn.addEventListener('click', () => {
         this.highlightColor = color;
         this.colorBtnElems.forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        // Activating a color also enables highlight mode
-        if (!this.highlightMode) {
+
+        // If there is an active text selection, highlight it immediately with this color.
+        const matchedWords = this.getSelectedOverlayWords();
+        if (matchedWords.length > 0) {
+          const n = ScribeViewer.state.cp.n;
+          applyHighlight(matchedWords, n, this.highlightColor, 0.5);
+          window.getSelection()?.removeAllRanges();
+          ScribeViewer.deleteHTMLOverlay();
+          ScribeViewer.renderHTMLOverlay();
+        } else if (!this.highlightMode) {
+          // No selection — activating a color also enables highlight mode
           this.highlightMode = true;
           this.highlightElem.classList.add('active');
           this.updateHighlightCursorStyle();
@@ -207,9 +220,6 @@ class ScribePDFViewer {
       this.colorBtnElems.push(btn);
       colorContainer.appendChild(btn);
     }
-
-    const verticalSeparator3 = document.createElement('span');
-    verticalSeparator3.className = 'vertical-separator';
 
     // Append buttons to toolbarButtons
     toolbarButtons.appendChild(this.prevElem);
@@ -220,14 +230,13 @@ class ScribePDFViewer {
     toolbarButtons.appendChild(verticalSeparator2);
     toolbarButtons.appendChild(this.highlightElem);
     toolbarButtons.appendChild(colorContainer);
-    toolbarButtons.appendChild(verticalSeparator3);
 
     center.appendChild(toolbarButtons);
 
     // Add start, center, and end to toolbar
-    toolbar.appendChild(start);
-    toolbar.appendChild(center);
-    toolbar.appendChild(end);
+    this.toolbarElem.appendChild(this.toolbarElemStart);
+    this.toolbarElem.appendChild(center);
+    this.toolbarElem.appendChild(this.toolbarElemEnd);
 
     // Viewer container
     this.viewerContainer = document.createElement('div');
@@ -241,7 +250,7 @@ class ScribePDFViewer {
     this.viewerContainer.appendChild(viewer);
 
     // Append toolbar and viewer container to root
-    this.pdfViewerElem.appendChild(toolbar);
+    this.pdfViewerElem.appendChild(this.toolbarElem);
     this.pdfViewerElem.appendChild(this.viewerContainer);
 
     this.dropZone = document.createElement('div');
@@ -299,7 +308,7 @@ class ScribePDFViewer {
     this.dropZone.appendChild(uploadDiv);
     this.pdfViewerElem.appendChild(this.dropZone);
 
-    this.importFile = async (file) => {
+    this.importFile = async (file, initialPage = 0) => {
       await scribe.importFiles([file]);
 
       // Initialize annotation pages array for each page
@@ -308,9 +317,9 @@ class ScribePDFViewer {
       }
 
       this.pageCountElem.textContent = scribe.inputData.pageCount.toString();
-      this.pageNumElem.value = '1';
+      this.pageNumElem.value = (initialPage + 1).toString();
 
-      ScribeViewer.displayPage(0);
+      await ScribeViewer.displayPage(initialPage, initialPage > 0);
 
       // This should run after importFiles so if that function fails the dropzone is not removed
       pdfViewer.dropZone.style.display = 'none';
@@ -342,7 +351,9 @@ class ScribePDFViewer {
     });
 
     // Add various event listners to HTML elements
+    this.nextElem.addEventListener('mousedown', (e) => e.preventDefault());
     this.nextElem.addEventListener('click', () => ScribeViewer.displayPage(ScribeViewer.state.cp.n + 1, true, false));
+    this.prevElem.addEventListener('mousedown', (e) => e.preventDefault());
     this.prevElem.addEventListener('click', () => ScribeViewer.displayPage(ScribeViewer.state.cp.n - 1, true, false));
 
     this.pageNumElem.addEventListener('keyup', (event) => {
@@ -351,11 +362,13 @@ class ScribePDFViewer {
       }
     });
 
+    this.zoomInElem.addEventListener('mousedown', (e) => e.preventDefault());
     this.zoomInElem.addEventListener('click', () => {
       ScribeViewer.zoom(1.1, ScribeViewer.getStageCenter());
       // this.zoomLevelElem.value = `${Math.round(ScribeCanvas.layerText.scaleX() * 100)}%`;
     });
 
+    this.zoomOutElem.addEventListener('mousedown', (e) => e.preventDefault());
     this.zoomOutElem.addEventListener('click', () => {
       ScribeViewer.zoom(0.9, ScribeViewer.getStageCenter());
       // this.zoomLevelElem.value = `${Math.round(ScribeCanvas.layerText.scaleX() * 100)}%`;
@@ -392,36 +405,18 @@ class ScribePDFViewer {
     });
 
     ScribeViewer.init(this.viewerContainer, width, height - toolbarHeight);
-    ScribeViewer.enableCanvasSelection = true;
 
     document.addEventListener('mouseup', (event) => {
       if (!this.highlightMode) return;
       if (!(event.target instanceof Node) || !this.pdfViewerElem.contains(event.target)) return;
 
-      const sel = window.getSelection();
-      if (!sel || sel.isCollapsed) return;
-
-      // Find all overlay word spans that are fully or partially within the selection range.
-      const range = sel.getRangeAt(0);
-      const wordElems = this.pdfViewerElem.querySelectorAll('.scribe-word');
-      const selectedIds = [];
-      for (const elem of wordElems) {
-        if (range.intersectsNode(elem)) {
-          selectedIds.push(elem.id);
-        }
-      }
-      if (selectedIds.length === 0) return;
-
-      // Map overlay element IDs back to KonvaOcrWord objects.
-      const allKonvaWords = ScribeViewer.getKonvaWords();
-      const idSet = new Set(selectedIds);
-      const matchedWords = allKonvaWords.filter((kw) => idSet.has(kw.word.id));
+      const matchedWords = this.getSelectedOverlayWords();
       if (matchedWords.length === 0) return;
 
       const n = ScribeViewer.state.cp.n;
       applyHighlight(matchedWords, n, this.highlightColor, 0.5);
 
-      sel.removeAllRanges();
+      window.getSelection()?.removeAllRanges();
       ScribeViewer.deleteHTMLOverlay();
       ScribeViewer.renderHTMLOverlay();
     });
@@ -472,6 +467,29 @@ class ScribePDFViewer {
     };
 
     container.appendChild(this.pdfViewerElem);
+  }
+
+  /**
+   * Returns KonvaOcrWord objects corresponding to the current browser text selection
+   * based on the HTML text overlay.
+   */
+  getSelectedOverlayWords() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return [];
+
+    const range = sel.getRangeAt(0);
+    const wordElems = this.pdfViewerElem.querySelectorAll('.scribe-word');
+    const selectedIds = [];
+    for (const elem of wordElems) {
+      if (range.intersectsNode(elem)) {
+        selectedIds.push(elem.id);
+      }
+    }
+    if (selectedIds.length === 0) return [];
+
+    const allKonvaWords = ScribeViewer.getKonvaWords();
+    const idSet = new Set(selectedIds);
+    return allKonvaWords.filter((kw) => idSet.has(kw.word.id));
   }
 
   /**
@@ -694,11 +712,74 @@ class ScribePDFViewer {
 
 const pdfViewerContElem = /** @type {HTMLDivElement} */(document.getElementById('pdfViewerCont'));
 
-const pdfViewer = new ScribePDFViewer(pdfViewerContElem);
+const pdfViewer = new ScribePDFViewer(pdfViewerContElem, window.innerWidth, window.innerHeight);
 
 // Exposing important modules for debugging and testing purposes.
 // These should not be relied upon in code--import/export should be used instead.
 globalThis.df = {
   scribe,
   ScribeCanvas: ScribeViewer,
+  applyHighlight,
+  pdfViewer,
 };
+
+let currentFile = null;
+async function handleLoadFile(file, page, readFileFn) {
+  // Hide the upload prompt immediately when loading a file via MCP/desktop.
+  pdfViewer.dropZone.style.display = 'none';
+
+  if (currentFile === file) {
+    await ScribeViewer.displayPage(page, true, false);
+    return;
+  }
+  const { buffer, name } = await readFileFn(file);
+  const fileObj = new File([buffer], name, { type: 'application/pdf' });
+  await pdfViewer.importFile(fileObj, page || 0);
+  currentFile = file;
+}
+
+async function handleHighlights(highlights) {
+  for (const highlight of highlights) {
+    const pageNum = highlight.page;
+    const page = scribe.data.ocr.active[pageNum];
+    if (!page) continue;
+
+    const lines = highlight.lines;
+    if (!lines || lines.length === 0) continue;
+
+    // Only switch pages if not already on the correct page.
+    // Always await to ensure words are fully rendered before querying.
+    if (ScribeViewer.state.cp.n !== pageNum) {
+      await ScribeViewer.displayPage(pageNum, true, false);
+    }
+
+    const allWords = ScribeViewer.getKonvaWords();
+    const matchedWords = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const lineNum = lines[i];
+      const line = page.lines[lineNum];
+      if (!line) continue;
+
+      let lineKonvaWords = allWords.filter((kw) => line.words.includes(kw.word));
+
+      if (i === 0 && highlight.startText) {
+        const startIdx = lineKonvaWords.findIndex((kw) => kw.word.text.includes(highlight.startText));
+        if (startIdx >= 0) lineKonvaWords = lineKonvaWords.slice(startIdx);
+      }
+
+      if (i === lines.length - 1 && highlight.endText) {
+        const endIdx = lineKonvaWords.findIndex((kw) => kw.word.text.includes(highlight.endText));
+        if (endIdx >= 0) lineKonvaWords = lineKonvaWords.slice(0, endIdx + 1);
+      }
+
+      matchedWords.push(...lineKonvaWords);
+    }
+
+    if (matchedWords.length > 0) {
+      applyHighlight(matchedWords, pageNum, highlight.color || '#ffff00', highlight.opacity || 0.4);
+    }
+  }
+}
+
+export { scribe, ScribeViewer, applyHighlight, pdfViewer, ScribePDFViewer, handleLoadFile, handleHighlights };
